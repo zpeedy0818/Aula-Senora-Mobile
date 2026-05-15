@@ -1,5 +1,6 @@
 package co.edu.aulasenora;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
 import android.widget.Toast;
@@ -100,7 +101,11 @@ public class RegisterActivity extends AppCompatActivity {
 
         if (success) {
             Toast.makeText(this, "Usuario registrado exitosamente como " + selectedRole, Toast.LENGTH_LONG).show();
-            finish(); // Go back to Login
+            // Volver directamente al Login limpiando la pila (RoleSelection se cierra también)
+            Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+            finish();
         } else {
             Toast.makeText(this, "Error al crear la cuenta. Intenta de nuevo.", Toast.LENGTH_SHORT).show();
         }

@@ -467,6 +467,32 @@
                 </androidx.cardview.widget.CardView>
             </LinearLayout>
         </LinearLayout>
+        <!-- Tutores Destacados Section (API) -->
+        <LinearLayout
+            android:id="@+id/sectionTutors"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="48dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:text="Tutores Destacados"
+                android:textColor="@color/textDark"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvTutors"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:clipToPadding="false"
+                android:paddingHorizontal="16dp" />
+        </LinearLayout>
 
         <!-- CTA Section -->
         <LinearLayout
