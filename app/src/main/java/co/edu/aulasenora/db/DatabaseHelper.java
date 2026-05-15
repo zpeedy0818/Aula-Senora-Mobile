@@ -75,6 +75,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return available;
     }
 
+    public String getUserRole(String email, String password) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT " + COLUMN_ROLE + " FROM " + TABLE_USERS + " WHERE " + COLUMN_EMAIL + "=? AND " + COLUMN_PASSWORD + "=?", new String[]{email, password});
+        String role = null;
+        if (cursor.moveToFirst()) {
+            role = cursor.getString(0);
+        }
+        cursor.close();
+        return role;
+    }
+
     public int getRoleCount(String role) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_USERS + " WHERE " + COLUMN_ROLE + "=?", new String[]{role});

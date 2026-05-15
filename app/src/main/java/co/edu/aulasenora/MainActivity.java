@@ -72,7 +72,16 @@ public class MainActivity extends AppCompatActivity {
             binding.btnLogin.setText("Ingresar");
             
             if (exists) {
-                Toast.makeText(MainActivity.this, "¡Bienvenido! Usuario confirmado en la Base de Datos Local.", Toast.LENGTH_LONG).show();
+                String role = dbHelper.getUserRole(email, password);
+                if ("Estudiante".equals(role)) {
+                    Toast.makeText(MainActivity.this, "Iniciando sesión como Estudiante...", Toast.LENGTH_SHORT).show();
+                    android.content.Intent intent = new android.content.Intent(MainActivity.this, StudentDashboardActivity.class);
+                    intent.putExtra("user_email", email);
+                    startActivity(intent);
+                    finish();
+                } else {
+                    Toast.makeText(MainActivity.this, "¡Bienvenido Voluntario! Panel en construcción.", Toast.LENGTH_LONG).show();
+                }
             } else {
                 Toast.makeText(MainActivity.this, "El usuario no se encuentra en la base de datos o la contraseña es incorrecta.", Toast.LENGTH_LONG).show();
             }
