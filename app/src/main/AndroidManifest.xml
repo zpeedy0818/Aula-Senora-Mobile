@@ -37,6 +37,18 @@
         <activity
             android:name=".StudentDashboardActivity"
             android:exported="false" />
+            
+        <activity
+            android:name=".VolunteerDashboardActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ManageAulasActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".CreateAulaActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

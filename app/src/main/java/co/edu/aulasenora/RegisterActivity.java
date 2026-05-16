@@ -3,13 +3,20 @@ package co.edu.aulasenora;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Toast;
+import android.transition.TransitionManager;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import co.edu.aulasenora.db.DatabaseHelper;
 import co.edu.aulasenora.databinding.ActivityRegisterBinding;
@@ -20,6 +27,14 @@ public class RegisterActivity extends AppCompatActivity {
     private DatabaseHelper dbHelper;
     private String selectedRole = "Estudiante"; // Default
     private boolean isPasswordVisible = false;
+
+    private final String[] specialties = {"Selecciona especialidad...", "Matemáticas", "Ciencias", "Lengua", "Sociales"};
+    private final Map<String, String> subareasMap = new HashMap<String, String>() {{
+        put("Matemáticas", "Álgebra • Geometría • Cálculo • Estadística");
+        put("Ciencias", "Física • Química • Biología • Astronomía");
+        put("Lengua", "Español • Inglés • Lingüística • Literatura");
+        put("Sociales", "Historia • Geografía • Sociología • Economía");
+    }};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,7 +56,39 @@ public class RegisterActivity extends AppCompatActivity {
             return insets;
         });
 
+        setupSpecialtySection();
         setupListeners();
+    }
+
+    private void setupSpecialtySection() {
+        if ("Voluntario".equals(selectedRole)) {
+            binding.llSpecialtySection.setVisibility(View.VISIBLE);
+
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, specialties);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            binding.spinnerSpecialty.setAdapter(adapter);
+
+            binding.spinnerSpecialty.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    TransitionManager.beginDelayedTransition(binding.llSpecialtySection);
+                    if (position == 0) {
+                        binding.cvSubareasPanel.setVisibility(View.GONE);
+                    } else {
+                        String selected = specialties[position];
+                        binding.tvSubareasContent.setText(subareasMap.get(selected));
+                        binding.cvSubareasPanel.setVisibility(View.VISIBLE);
+                    }
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {
+                    binding.cvSubareasPanel.setVisibility(View.GONE);
+                }
+            });
+        } else {
+            binding.llSpecialtySection.setVisibility(View.GONE);
+        }
     }
 
     private void setupListeners() {
@@ -70,10 +117,19 @@ public class RegisterActivity extends AppCompatActivity {
         String email = binding.etEmail.getText().toString().trim();
         String password = binding.etPassword.getText().toString();
         String confirmPassword = binding.etConfirmPassword.getText().toString();
+        String specialty = null;
 
         if (name.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
             Toast.makeText(this, "Por favor llena todos los campos.", Toast.LENGTH_SHORT).show();
             return;
+        }
+
+        if ("Voluntario".equals(selectedRole)) {
+            if (binding.spinnerSpecialty.getSelectedItemPosition() == 0) {
+                Toast.makeText(this, "Por favor selecciona una especialidad.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            specialty = binding.spinnerSpecialty.getSelectedItem().toString();
         }
 
         if (password.length() < 8) {
@@ -97,7 +153,7 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        boolean success = dbHelper.registerUser(name, email, password, selectedRole);
+        boolean success = dbHelper.registerUser(name, email, password, selectedRole, specialty);
 
         if (success) {
             Toast.makeText(this, "Usuario registrado exitosamente como " + selectedRole, Toast.LENGTH_LONG).show();

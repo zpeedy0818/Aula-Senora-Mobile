@@ -12,7 +12,6 @@ public class ApiClient {
 
     public static Retrofit getClient() {
         if (retrofit == null) {
-            // Configurar el interceptor para imprimir logs en consola
             HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
             interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
 
@@ -20,7 +19,6 @@ public class ApiClient {
                     .addInterceptor(interceptor)
                     .build();
 
-            // Construir la instancia de Retrofit
             retrofit = new Retrofit.Builder()
                     .baseUrl(BASE_URL)
                     .client(client)

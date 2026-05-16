@@ -79,8 +79,14 @@ public class MainActivity extends AppCompatActivity {
                     intent.putExtra("user_email", email);
                     startActivity(intent);
                     finish();
+                } else if ("Voluntario".equals(role)) {
+                    Toast.makeText(MainActivity.this, "Iniciando sesión como Voluntario...", Toast.LENGTH_SHORT).show();
+                    android.content.Intent intent = new android.content.Intent(MainActivity.this, VolunteerDashboardActivity.class);
+                    intent.putExtra("user_email", email);
+                    startActivity(intent);
+                    finish();
                 } else {
-                    Toast.makeText(MainActivity.this, "¡Bienvenido Voluntario! Panel en construcción.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, "¡Bienvenido! Rol no reconocido.", Toast.LENGTH_LONG).show();
                 }
             } else {
                 Toast.makeText(MainActivity.this, "El usuario no se encuentra en la base de datos o la contraseña es incorrecta.", Toast.LENGTH_LONG).show();
