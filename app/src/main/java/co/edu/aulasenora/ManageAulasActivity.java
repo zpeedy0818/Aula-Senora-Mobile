@@ -46,7 +46,9 @@ public class ManageAulasActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        binding.btnBack.setOnClickListener(v -> finish());
+        binding.includeHeader.btnBack.setOnClickListener(v -> finish());
+        binding.includeHeader.headerBar.setBackgroundColor(getColor(R.color.volunteerPrimary));
+        binding.includeHeader.tvTitle.setText("Gestión de Aulas");
         
         binding.fabCreateAula.setOnClickListener(v -> {
             Intent intent = new Intent(this, CreateAulaActivity.class);
@@ -99,7 +101,10 @@ public class ManageAulasActivity extends AppCompatActivity {
                 }
                 
                 btnManage.setOnClickListener(v -> {
-                    Toast.makeText(this, "Gestionar aula: " + aula.getName() + " (En construcción)", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(ManageAulasActivity.this, ManageAulaActivity.class);
+                    intent.putExtra("aula_id", aula.getId());
+                    intent.putExtra("user_email", userEmail);
+                    startActivity(intent);
                 });
                 
                 binding.llAulasList.addView(cardView);
