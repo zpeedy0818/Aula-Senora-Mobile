@@ -85,6 +85,12 @@ public class MainActivity extends AppCompatActivity {
                     intent.putExtra("user_email", email);
                     startActivity(intent);
                     finish();
+                } else if ("Admin".equals(role)) {
+                    Toast.makeText(MainActivity.this, "Iniciando sesión como Administrador...", Toast.LENGTH_SHORT).show();
+                    android.content.Intent intent = new android.content.Intent(MainActivity.this, AdminDashboardActivity.class);
+                    intent.putExtra("user_email", email);
+                    startActivity(intent);
+                    finish();
                 } else {
                     Toast.makeText(MainActivity.this, "¡Bienvenido! Rol no reconocido.", Toast.LENGTH_LONG).show();
                 }

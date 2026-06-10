@@ -1,11 +1,18 @@
 package co.edu.aulasenora;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -16,6 +23,7 @@ import android.util.Log;
 import co.edu.aulasenora.api.ApiClient;
 import co.edu.aulasenora.models.RandomUserResponse;
 import co.edu.aulasenora.models.User;
+import co.edu.aulasenora.services.NotificationHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import android.view.View;
@@ -31,6 +39,8 @@ public class HomeActivity extends AppCompatActivity {
     private ActivityHomeBinding binding;
     private DatabaseHelper dbHelper;
     private TutorAdapter tutorAdapter;
+    private ActivityResultLauncher<String> notificationPermissionLauncher;
+    private boolean permissionRequested = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +56,18 @@ public class HomeActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        notificationPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                granted -> {
+                    if (granted) {
+                        Log.d(TAG, "Permiso de notificaciones concedido");
+                        NotificationHelper.createNotificationChannel(this);
+                    } else {
+                        Log.d(TAG, "Permiso de notificaciones denegado");
+                    }
+                }
+        );
 
         loadStatistics();
         setupListeners();
@@ -65,6 +87,33 @@ public class HomeActivity extends AppCompatActivity {
         super.onResume();
         // Update stats every time the user comes back to this screen
         loadStatistics();
+        requestNotificationPermission();
+    }
+
+    private void requestNotificationPermission() {
+        if (permissionRequested) return;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return;
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED) {
+            permissionRequested = true;
+            NotificationHelper.createNotificationChannel(this);
+            return;
+        }
+
+        permissionRequested = true;
+
+        if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Activar notificaciones")
+                    .setMessage("Aula Señora necesita enviarte notificaciones para informarte sobre tus aulas, sesiones y actividades. ¿Deseas activarlas?")
+                    .setPositiveButton("Activar", (d, w) ->
+                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS))
+                    .setNegativeButton("No ahora", (d, w) -> d.dismiss())
+                    .show();
+        } else {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+        }
     }
 
     private void loadStatistics() {

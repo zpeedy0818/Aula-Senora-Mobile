@@ -120,7 +120,9 @@ public class CreateAulaActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        binding.btnBack.setOnClickListener(v -> finish());
+        binding.includeHeader.btnBack.setOnClickListener(v -> finish());
+        binding.includeHeader.headerBar.setBackgroundColor(getColor(R.color.volunteerPrimary));
+        binding.includeHeader.tvTitle.setText("Crear Nueva Aula");
 
         binding.btnCreate.setOnClickListener(v -> {
             String name = binding.etAulaName.getText().toString().trim();
