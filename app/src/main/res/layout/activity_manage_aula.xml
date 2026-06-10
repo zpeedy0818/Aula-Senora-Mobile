@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    style="@style/ActivityRoot">
+
+    <LinearLayout
+        style="@style/ActivityInner">
+
+        <include
+            android:id="@+id/includeHeader"
+            layout="@layout/include_header" />
+
+        <ScrollView
+            style="@style/ActivityScrollView">
+
+            <LinearLayout
+                android:id="@+id/llContainer"
+                style="@style/ActivityContainer">
+
+                <!-- ===== SECCION: ESTUDIANTES ADMITIDOS ===== -->
+                <androidx.cardview.widget.CardView
+                    style="@style/SectionCard"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp">
+
+                    <LinearLayout
+                        style="@style/SectionCardContent">
+
+                        <LinearLayout
+                            style="@style/SectionCardHeader">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_users"
+                                app:tint="@color/primaryIndigo" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_weight="1"
+                                android:text="Estudiantes Admitidos"
+                                android:textColor="@color/textDark"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvAdmittedCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="@color/primaryIndigo"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginVertical="12dp"
+                            android:background="#E5E7EB" />
+
+                        <LinearLayout
+                            android:id="@+id/llAdmittedStudents"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
+
+                        <TextView
+                            android:id="@+id/tvEmptyAdmitted"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Aún no hay estudiantes admitidos"
+                            android:textColor="@color/textGray"
+                            android:textSize="14sp"
+                            android:visibility="gone" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- ===== SECCION: CALENDARIO / DISPONIBILIDAD ===== -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cardCalendar"
+                    style="@style/SectionCard"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp">
+
+                    <LinearLayout
+                        style="@style/SectionCardContent">
+
+                        <LinearLayout
+                            style="@style/SectionCardHeader">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_calendar"
+                                app:tint="@color/primaryCyan" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_weight="1"
+                                android:text="Calendario de Disponibilidad"
+                                android:textColor="@color/textDark"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/btnViewAllSchedule"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="8dp"
+                                android:text="Ver todos"
+                                android:textColor="@color/primaryIndigo"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:clickable="true"
+                                android:focusable="true" />
+
+                            <TextView
+                                android:id="@+id/btnAddSlot"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingHorizontal="12dp"
+                                android:paddingVertical="6dp"
+                                android:text="+ Agregar"
+                                android:textColor="@color/white"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:background="@drawable/bg_rounded_green"
+                                android:clickable="true"
+                                android:focusable="true" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginVertical="12dp"
+                            android:background="#E5E7EB" />
+
+                        <LinearLayout
+                            android:id="@+id/llScheduleSlots"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
+
+                        <TextView
+                            android:id="@+id/tvEmptySchedule"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="No hay horarios registrados"
+                            android:textColor="@color/textGray"
+                            android:textSize="14sp"
+                            android:visibility="gone" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- ===== SECCION: PRÓXIMAS TUTORÍAS ===== -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cardPendingTutoring"
+                    style="@style/SectionCard"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp">
+
+                    <LinearLayout
+                        style="@style/SectionCardContent">
+
+                        <LinearLayout
+                            style="@style/SectionCardHeader">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_clock"
+                                app:tint="@color/primaryOrange" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_weight="1"
+                                android:text="Próximas Tutorías"
+                                android:textColor="@color/textDark"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/btnViewAllTutoring"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Ver todos"
+                                android:textColor="@color/primaryIndigo"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:clickable="true"
+                                android:focusable="true" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginVertical="12dp"
+                            android:background="#E5E7EB" />
+
+                        <LinearLayout
+                            android:id="@+id/llPendingTutoring"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
+
+                        <TextView
+                            android:id="@+id/tvEmptyPendingTutoring"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="No hay tutorías programadas próximamente"
+                            android:textColor="@color/textGray"
+                            android:textSize="14sp"
+                            android:visibility="gone" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- ===== SECCION: SOLICITUDES DE TUTORÍA ===== -->
+                <TextView
+                    style="@style/SectionLabel"
+                    android:text="Solicitudes de Tutoría" />
+
+                <LinearLayout
+                    android:id="@+id/llTutoringRequests"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="4dp" />
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cvEmptyTutoringRequests"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp">
+
+                    <LinearLayout
+                        style="@style/EmptyStateContent">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="No hay solicitudes de tutoría pendientes"
+                            android:textColor="@color/textGray"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- ===== SECCION: SOLICITUDES DE ACCESO ===== -->
+                <TextView
+                    style="@style/SectionLabel"
+                    android:text="Solicitudes de Acceso al Aula" />
+
+                <LinearLayout
+                    android:id="@+id/llAccessRequests"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="4dp" />
+
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cvEmptyAccessRequests"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp">
+
+                    <LinearLayout
+                        style="@style/EmptyStateContent">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="No hay solicitudes de acceso pendientes"
+                            android:textColor="@color/textGray"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
