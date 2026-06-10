@@ -9,4 +9,24 @@
     <color name="inputBackground">#F3F4F6</color>
     <color name="transparent">#00000000</color>
     <color name="primaryOrange">#FFB74D</color>
+    <color name="primaryIndigo">#4F46E5</color>
+
+    <!-- Estudiante: azul / cian -->
+    <color name="studentPrimary">#00BBD4</color>
+    <color name="studentDark">#0097A7</color>
+    <color name="studentAccent">#4DD0E1</color>
+
+    <!-- Voluntario: naranja -->
+    <color name="volunteerPrimary">#FFB74D</color>
+    <color name="volunteerDark">#FFA726</color>
+    <color name="volunteerAccent">#FFCC80</color>
+
+    <!-- Admin: morado / índigo -->
+    <color name="adminPrimary">#4F46E5</color>
+    <color name="adminDark">#4338CA</color>
+    <color name="adminAccent">#7C73F0</color>
+
+    <!-- Badges -->
+    <color name="badgeGreen">#4CAF50</color>
+    <color name="badgeRed">#F44336</color>
 </resources>
