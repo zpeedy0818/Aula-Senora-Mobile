@@ -1,6 +1,10 @@
 package co.edu.aulasenora;
 
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import android.os.Handler;
@@ -17,6 +21,7 @@ import android.content.Intent;
 
 import co.edu.aulasenora.databinding.ActivityVolunteerDashboardBinding;
 import co.edu.aulasenora.db.DatabaseHelper;
+import co.edu.aulasenora.models.AccessRequest;
 import co.edu.aulasenora.models.Aula;
 
 public class VolunteerDashboardActivity extends AppCompatActivity {
@@ -122,18 +127,68 @@ public class VolunteerDashboardActivity extends AppCompatActivity {
             Toast.makeText(this, "Ejercicios de Cálculo (En construcción)", Toast.LENGTH_SHORT).show()
         );
 
+        // Ver todas solicitudes
+        binding.btnViewAllRequests.setOnClickListener(v -> {
+            List<AccessRequest> allRequests = dbHelper.getAllPendingRequestsForVolunteer(userEmail);
+            displayAccessRequests(allRequests);
+        });
+
         // Bottom navigation
         binding.navInicio.setOnClickListener(v ->
             Toast.makeText(this, "Ya estás en Inicio", Toast.LENGTH_SHORT).show()
         );
 
-        binding.navHistorial.setOnClickListener(v ->
-            Toast.makeText(this, "Historial (En construcción)", Toast.LENGTH_SHORT).show()
-        );
+        binding.navSolicitudes.setOnClickListener(v -> {
+            binding.scrollView.post(() ->
+                binding.scrollView.smoothScrollTo(0, binding.llRequestsSection.getTop()));
+            loadAccessRequests();
+        });
 
         binding.navPerfil.setOnClickListener(v ->
             Toast.makeText(this, "Perfil (En construcción)", Toast.LENGTH_SHORT).show()
         );
+    }
+
+    private void loadAccessRequests() {
+        List<AccessRequest> requests = dbHelper.getPendingRequestsForVolunteer(userEmail, 3);
+        displayAccessRequests(requests);
+    }
+
+    private void displayAccessRequests(List<AccessRequest> requests) {
+        binding.llRequestsContainer.removeAllViews();
+        binding.cvEmptyRequests.setVisibility(View.GONE);
+
+        if (requests.isEmpty()) {
+            binding.cvEmptyRequests.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        for (AccessRequest req : requests) {
+            View cardView = inflater.inflate(R.layout.item_access_request, binding.llRequestsContainer, false);
+
+            TextView tvStudentName = cardView.findViewById(R.id.tvStudentName);
+            TextView tvAulaName = cardView.findViewById(R.id.tvRequestAulaName);
+            Button btnAccept = cardView.findViewById(R.id.btnAcceptRequest);
+            Button btnDeny = cardView.findViewById(R.id.btnDenyRequest);
+
+            tvStudentName.setText(req.getStudentName());
+            tvAulaName.setText("Solicita acceso a: " + req.getAulaName());
+
+            btnAccept.setOnClickListener(v -> {
+                dbHelper.updateAccessRequestStatus(req.getId(), "approved");
+                Toast.makeText(this, "Solicitud de " + req.getStudentName() + " aceptada", Toast.LENGTH_SHORT).show();
+                loadAccessRequests();
+            });
+
+            btnDeny.setOnClickListener(v -> {
+                dbHelper.updateAccessRequestStatus(req.getId(), "rejected");
+                Toast.makeText(this, "Solicitud de " + req.getStudentName() + " denegada", Toast.LENGTH_SHORT).show();
+                loadAccessRequests();
+            });
+
+            binding.llRequestsContainer.addView(cardView);
+        }
     }
 
     private void loadAulas() {
@@ -177,7 +232,10 @@ public class VolunteerDashboardActivity extends AppCompatActivity {
                 }
                 
                 btnManage.setOnClickListener(v -> {
-                    android.widget.Toast.makeText(this, "Gestionar aula: " + aula.getName() + " (En construcción)", android.widget.Toast.LENGTH_SHORT).show();
+                    android.content.Intent intent = new android.content.Intent(VolunteerDashboardActivity.this, ManageAulaActivity.class);
+                    intent.putExtra("aula_id", aula.getId());
+                    intent.putExtra("user_email", userEmail);
+                    startActivity(intent);
                 });
                 
                 binding.llAulasContainer.addView(cardView);
@@ -190,6 +248,7 @@ public class VolunteerDashboardActivity extends AppCompatActivity {
         super.onResume();
         if (userEmail != null) {
             loadAulas();
+            loadAccessRequests();
         }
     }
 
