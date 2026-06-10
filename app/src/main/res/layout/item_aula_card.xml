@@ -57,6 +57,16 @@
             android:textColor="@color/textGray"
             android:textSize="14sp" />
 
+        <TextView
+            android:id="@+id/tvVolunteerName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Voluntario"
+            android:textColor="@color/primaryOrange"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
