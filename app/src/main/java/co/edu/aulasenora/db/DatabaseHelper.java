@@ -10,7 +10,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "aulasenora.db";
     // Si la versión sube, Android invocará onUpgrade automáticamente
-    private static final int DATABASE_VERSION = 14;
+    private static final int DATABASE_VERSION = 15;
 
     public static final String TABLE_USERS = "users";
     public static final String COLUMN_ID = "id";
@@ -78,6 +78,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_READ_AULA_ID = "aula_id";
     public static final String COLUMN_READ_USER_EMAIL = "user_email";
     public static final String COLUMN_READ_LAST_MESSAGE_ID = "last_read_message_id";
+
+    public static final String TABLE_VOLUNTEER_RATINGS = "volunteer_ratings";
+    public static final String COLUMN_RATING_ID = "id";
+    public static final String COLUMN_RATING_VOLUNTEER_EMAIL = "volunteer_email";
+    public static final String COLUMN_RATING_STUDENT_EMAIL = "student_email";
+    public static final String COLUMN_RATING_AULA_ID = "aula_id";
+    public static final String COLUMN_RATING_VALUE = "rating";
+    public static final String COLUMN_RATING_CREATED_AT = "created_at";
 
     public static final String TABLE_SCHEDULE_SLOTS = "schedule_slots";
     public static final String COLUMN_SLOT_ID = "id";
@@ -260,16 +268,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         COLUMN_MATERIAL_CREATED_AT + " DATETIME DEFAULT CURRENT_TIMESTAMP)");
             } catch (Exception ignored) { }
         }
-        if (oldVersion < 14) {
-            try {
-                db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_MATERIAL_DOWNLOADS + " (" +
-                        COLUMN_DOWNLOAD_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                        COLUMN_DOWNLOAD_MATERIAL_ID + " INTEGER NOT NULL, " +
-                        COLUMN_DOWNLOAD_STUDENT_EMAIL + " TEXT NOT NULL, " +
-                        COLUMN_DOWNLOAD_VIEWED_AT + " DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-                        "UNIQUE(" + COLUMN_DOWNLOAD_MATERIAL_ID + ", " + COLUMN_DOWNLOAD_STUDENT_EMAIL + "))");
-            } catch (Exception ignored) { }
-        }
         if (oldVersion < 13) {
             try {
                 db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_CHAT_MESSAGES + " (" +
@@ -286,6 +284,28 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         COLUMN_READ_USER_EMAIL + " TEXT, " +
                         COLUMN_READ_LAST_MESSAGE_ID + " INTEGER DEFAULT 0, " +
                         "UNIQUE(" + COLUMN_READ_AULA_ID + ", " + COLUMN_READ_USER_EMAIL + "))");
+            } catch (Exception ignored) { }
+        }
+        if (oldVersion < 14) {
+            try {
+                db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_MATERIAL_DOWNLOADS + " (" +
+                        COLUMN_DOWNLOAD_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        COLUMN_DOWNLOAD_MATERIAL_ID + " INTEGER NOT NULL, " +
+                        COLUMN_DOWNLOAD_STUDENT_EMAIL + " TEXT NOT NULL, " +
+                        COLUMN_DOWNLOAD_VIEWED_AT + " DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "UNIQUE(" + COLUMN_DOWNLOAD_MATERIAL_ID + ", " + COLUMN_DOWNLOAD_STUDENT_EMAIL + "))");
+            } catch (Exception ignored) { }
+        }
+        if (oldVersion < 15) {
+            try {
+                db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_VOLUNTEER_RATINGS + " (" +
+                        COLUMN_RATING_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        COLUMN_RATING_VOLUNTEER_EMAIL + " TEXT, " +
+                        COLUMN_RATING_STUDENT_EMAIL + " TEXT, " +
+                        COLUMN_RATING_AULA_ID + " INTEGER, " +
+                        COLUMN_RATING_VALUE + " INTEGER DEFAULT 0, " +
+                        COLUMN_RATING_CREATED_AT + " DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+                        "UNIQUE(" + COLUMN_RATING_VOLUNTEER_EMAIL + ", " + COLUMN_RATING_STUDENT_EMAIL + ", " + COLUMN_RATING_AULA_ID + "))");
             } catch (Exception ignored) { }
         }
     }
@@ -331,6 +351,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return role;
     }
 
+    public String getUserRoleByEmail(String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT " + COLUMN_ROLE + " FROM " + TABLE_USERS + " WHERE " + COLUMN_EMAIL + "=?", new String[]{email});
+        String role = null;
+        if (cursor.moveToFirst()) {
+            role = cursor.getString(0);
+        }
+        cursor.close();
+        return role;
+    }
+
     public long getTimeSpent(String email) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery("SELECT " + COLUMN_TIME_SPENT + " FROM " + TABLE_USERS + " WHERE " + COLUMN_EMAIL + "=?", new String[]{email});
@@ -366,6 +397,59 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         cursor.close();
         return specialty;
+    }
+
+    public void saveVolunteerRating(String volunteerEmail, String studentEmail, int aulaId, int rating) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_RATING_VOLUNTEER_EMAIL, volunteerEmail);
+        values.put(COLUMN_RATING_STUDENT_EMAIL, studentEmail);
+        values.put(COLUMN_RATING_AULA_ID, aulaId);
+        values.put(COLUMN_RATING_VALUE, rating);
+        db.insertWithOnConflict(TABLE_VOLUNTEER_RATINGS, null, values,
+                SQLiteDatabase.CONFLICT_REPLACE);
+    }
+
+    public int getVolunteerRating(String volunteerEmail, String studentEmail, int aulaId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT " + COLUMN_RATING_VALUE + " FROM " + TABLE_VOLUNTEER_RATINGS +
+                " WHERE " + COLUMN_RATING_VOLUNTEER_EMAIL + "=? AND " + COLUMN_RATING_STUDENT_EMAIL + "=? AND " + COLUMN_RATING_AULA_ID + "=?",
+                new String[]{volunteerEmail, studentEmail, String.valueOf(aulaId)});
+        int rating = 0;
+        if (cursor.moveToFirst()) {
+            rating = cursor.getInt(0);
+        }
+        cursor.close();
+        return rating;
+    }
+
+    public int getDistinctStudentsHelpedCount(String volunteerEmail) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT COUNT(DISTINCT ar." + COLUMN_REQUEST_STUDENT_EMAIL + ") FROM " + TABLE_ACCESS_REQUESTS + " ar " +
+                        "INNER JOIN " + TABLE_AULAS + " a ON ar." + COLUMN_REQUEST_AULA_ID + " = a." + COLUMN_AULA_ID +
+                        " WHERE a." + COLUMN_AULA_VOLUNTEER_EMAIL + "=? AND ar." + COLUMN_REQUEST_STATUS + "='approved'",
+                new String[]{volunteerEmail});
+        int count = 0;
+        if (cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+        }
+        cursor.close();
+        return count;
+    }
+
+    public double getVolunteerAverageRating(String volunteerEmail) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT AVG(CAST(" + COLUMN_RATING_VALUE + " AS REAL)) FROM " + TABLE_VOLUNTEER_RATINGS +
+                        " WHERE " + COLUMN_RATING_VOLUNTEER_EMAIL + "=?",
+                new String[]{volunteerEmail});
+        double avg = 0.0;
+        if (cursor.moveToFirst()) {
+            avg = cursor.getDouble(0);
+        }
+        cursor.close();
+        return avg;
     }
 
     public boolean createAula(String name, String description, String subject, String volunteerEmail) {
@@ -984,6 +1068,78 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 " WHERE a." + COLUMN_AULA_VOLUNTEER_EMAIL + "=? AND s." + COLUMN_SLOT_TYPE + "=? AND s." + COLUMN_SLOT_DATE + "=?" +
                 " ORDER BY s." + COLUMN_SLOT_START_TIME + " ASC";
         Cursor cursor = db.rawQuery(query, new String[]{volunteerEmail, "tutoring", today});
+        if (cursor.moveToFirst()) {
+            do {
+                co.edu.aulasenora.models.ScheduleSlot slot = new co.edu.aulasenora.models.ScheduleSlot(
+                        cursor.getInt(0), cursor.getInt(1), cursor.getString(2),
+                        cursor.getString(3), cursor.getString(4), cursor.getString(5),
+                        cursor.getString(6), cursor.getString(7), cursor.getString(8),
+                        cursor.getString(9), cursor.getString(10)
+                );
+                slot.setAulaName(cursor.getString(11));
+                sessions.add(slot);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return sessions;
+    }
+
+    public java.util.List<co.edu.aulasenora.models.ScheduleSlot> getUpcomingTutoringForStudent(String studentEmail, int limit) {
+        java.util.List<co.edu.aulasenora.models.ScheduleSlot> sessions = new java.util.ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String today = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                .format(new java.util.Date());
+        String query = "SELECT s." + COLUMN_SLOT_ID + ", s." + COLUMN_SLOT_AULA_ID +
+                ", s." + COLUMN_SLOT_VOLUNTEER_EMAIL + ", s." + COLUMN_SLOT_DATE +
+                ", s." + COLUMN_SLOT_START_TIME + ", s." + COLUMN_SLOT_END_TIME +
+                ", s." + COLUMN_SLOT_TYPE + ", s." + COLUMN_SLOT_TOPIC +
+                ", s." + COLUMN_SLOT_TARGET_STUDENT_EMAIL + ", COALESCE(u." + COLUMN_NAME + ", '')" +
+                ", s." + COLUMN_SLOT_CREATED_AT + ", a." + COLUMN_AULA_NAME +
+                " FROM " + TABLE_SCHEDULE_SLOTS + " s" +
+                " INNER JOIN " + TABLE_AULAS + " a ON s." + COLUMN_SLOT_AULA_ID + " = a." + COLUMN_AULA_ID +
+                " INNER JOIN " + TABLE_ACCESS_REQUESTS + " ar ON ar." + COLUMN_REQUEST_AULA_ID + " = s." + COLUMN_SLOT_AULA_ID +
+                " LEFT JOIN " + TABLE_USERS + " u ON s." + COLUMN_SLOT_TARGET_STUDENT_EMAIL + " = u." + COLUMN_EMAIL +
+                " WHERE ar." + COLUMN_REQUEST_STUDENT_EMAIL + "=? AND ar." + COLUMN_REQUEST_STATUS + "=?" +
+                " AND s." + COLUMN_SLOT_TYPE + "=? AND (s." + COLUMN_SLOT_TARGET_STUDENT_EMAIL + "=? OR s." + COLUMN_SLOT_TARGET_STUDENT_EMAIL + " IS NULL)" +
+                " AND s." + COLUMN_SLOT_DATE + ">=?" +
+                " ORDER BY s." + COLUMN_SLOT_DATE + " ASC, s." + COLUMN_SLOT_START_TIME + " ASC LIMIT ?";
+        Cursor cursor = db.rawQuery(query, new String[]{studentEmail, "approved", "tutoring", studentEmail, today, String.valueOf(limit)});
+        if (cursor.moveToFirst()) {
+            do {
+                co.edu.aulasenora.models.ScheduleSlot slot = new co.edu.aulasenora.models.ScheduleSlot(
+                        cursor.getInt(0), cursor.getInt(1), cursor.getString(2),
+                        cursor.getString(3), cursor.getString(4), cursor.getString(5),
+                        cursor.getString(6), cursor.getString(7), cursor.getString(8),
+                        cursor.getString(9), cursor.getString(10)
+                );
+                slot.setAulaName(cursor.getString(11));
+                sessions.add(slot);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return sessions;
+    }
+
+    public java.util.List<co.edu.aulasenora.models.ScheduleSlot> getTodayTutoringForStudent(String studentEmail) {
+        java.util.List<co.edu.aulasenora.models.ScheduleSlot> sessions = new java.util.ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String today = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                .format(new java.util.Date());
+        String query = "SELECT s." + COLUMN_SLOT_ID + ", s." + COLUMN_SLOT_AULA_ID +
+                ", s." + COLUMN_SLOT_VOLUNTEER_EMAIL + ", s." + COLUMN_SLOT_DATE +
+                ", s." + COLUMN_SLOT_START_TIME + ", s." + COLUMN_SLOT_END_TIME +
+                ", s." + COLUMN_SLOT_TYPE + ", s." + COLUMN_SLOT_TOPIC +
+                ", s." + COLUMN_SLOT_TARGET_STUDENT_EMAIL + ", COALESCE(u." + COLUMN_NAME + ", '')" +
+                ", s." + COLUMN_SLOT_CREATED_AT + ", a." + COLUMN_AULA_NAME +
+                " FROM " + TABLE_SCHEDULE_SLOTS + " s" +
+                " INNER JOIN " + TABLE_AULAS + " a ON s." + COLUMN_SLOT_AULA_ID + " = a." + COLUMN_AULA_ID +
+                " INNER JOIN " + TABLE_ACCESS_REQUESTS + " ar ON ar." + COLUMN_REQUEST_AULA_ID + " = s." + COLUMN_SLOT_AULA_ID +
+                " LEFT JOIN " + TABLE_USERS + " u ON s." + COLUMN_SLOT_TARGET_STUDENT_EMAIL + " = u." + COLUMN_EMAIL +
+                " WHERE ar." + COLUMN_REQUEST_STUDENT_EMAIL + "=? AND ar." + COLUMN_REQUEST_STATUS + "=?" +
+                " AND s." + COLUMN_SLOT_TYPE + "=? AND (s." + COLUMN_SLOT_TARGET_STUDENT_EMAIL + "=? OR s." + COLUMN_SLOT_TARGET_STUDENT_EMAIL + " IS NULL)" +
+                " AND s." + COLUMN_SLOT_DATE + "=?" +
+                " ORDER BY s." + COLUMN_SLOT_START_TIME + " ASC";
+        Cursor cursor = db.rawQuery(query, new String[]{studentEmail, "approved", "tutoring", studentEmail, today});
         if (cursor.moveToFirst()) {
             do {
                 co.edu.aulasenora.models.ScheduleSlot slot = new co.edu.aulasenora.models.ScheduleSlot(
