@@ -934,6 +934,72 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return sessions;
     }
 
+    public java.util.List<co.edu.aulasenora.models.ScheduleSlot> getUpcomingTutoringForVolunteer(String volunteerEmail, int limit) {
+        java.util.List<co.edu.aulasenora.models.ScheduleSlot> sessions = new java.util.ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String today = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                .format(new java.util.Date());
+        String query = "SELECT s." + COLUMN_SLOT_ID + ", s." + COLUMN_SLOT_AULA_ID +
+                ", s." + COLUMN_SLOT_VOLUNTEER_EMAIL + ", s." + COLUMN_SLOT_DATE +
+                ", s." + COLUMN_SLOT_START_TIME + ", s." + COLUMN_SLOT_END_TIME +
+                ", s." + COLUMN_SLOT_TYPE + ", s." + COLUMN_SLOT_TOPIC +
+                ", s." + COLUMN_SLOT_TARGET_STUDENT_EMAIL + ", COALESCE(u." + COLUMN_NAME + ", '')" +
+                ", s." + COLUMN_SLOT_CREATED_AT + ", a." + COLUMN_AULA_NAME +
+                " FROM " + TABLE_SCHEDULE_SLOTS + " s" +
+                " INNER JOIN " + TABLE_AULAS + " a ON s." + COLUMN_SLOT_AULA_ID + " = a." + COLUMN_AULA_ID +
+                " LEFT JOIN " + TABLE_USERS + " u ON s." + COLUMN_SLOT_TARGET_STUDENT_EMAIL + " = u." + COLUMN_EMAIL +
+                " WHERE a." + COLUMN_AULA_VOLUNTEER_EMAIL + "=? AND s." + COLUMN_SLOT_TYPE + "=? AND s." + COLUMN_SLOT_DATE + ">=?" +
+                " ORDER BY s." + COLUMN_SLOT_DATE + " ASC, s." + COLUMN_SLOT_START_TIME + " ASC LIMIT ?";
+        Cursor cursor = db.rawQuery(query, new String[]{volunteerEmail, "tutoring", today, String.valueOf(limit)});
+        if (cursor.moveToFirst()) {
+            do {
+                co.edu.aulasenora.models.ScheduleSlot slot = new co.edu.aulasenora.models.ScheduleSlot(
+                        cursor.getInt(0), cursor.getInt(1), cursor.getString(2),
+                        cursor.getString(3), cursor.getString(4), cursor.getString(5),
+                        cursor.getString(6), cursor.getString(7), cursor.getString(8),
+                        cursor.getString(9), cursor.getString(10)
+                );
+                slot.setAulaName(cursor.getString(11));
+                sessions.add(slot);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return sessions;
+    }
+
+    public java.util.List<co.edu.aulasenora.models.ScheduleSlot> getTodayTutoringForVolunteer(String volunteerEmail) {
+        java.util.List<co.edu.aulasenora.models.ScheduleSlot> sessions = new java.util.ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String today = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                .format(new java.util.Date());
+        String query = "SELECT s." + COLUMN_SLOT_ID + ", s." + COLUMN_SLOT_AULA_ID +
+                ", s." + COLUMN_SLOT_VOLUNTEER_EMAIL + ", s." + COLUMN_SLOT_DATE +
+                ", s." + COLUMN_SLOT_START_TIME + ", s." + COLUMN_SLOT_END_TIME +
+                ", s." + COLUMN_SLOT_TYPE + ", s." + COLUMN_SLOT_TOPIC +
+                ", s." + COLUMN_SLOT_TARGET_STUDENT_EMAIL + ", COALESCE(u." + COLUMN_NAME + ", '')" +
+                ", s." + COLUMN_SLOT_CREATED_AT + ", a." + COLUMN_AULA_NAME +
+                " FROM " + TABLE_SCHEDULE_SLOTS + " s" +
+                " INNER JOIN " + TABLE_AULAS + " a ON s." + COLUMN_SLOT_AULA_ID + " = a." + COLUMN_AULA_ID +
+                " LEFT JOIN " + TABLE_USERS + " u ON s." + COLUMN_SLOT_TARGET_STUDENT_EMAIL + " = u." + COLUMN_EMAIL +
+                " WHERE a." + COLUMN_AULA_VOLUNTEER_EMAIL + "=? AND s." + COLUMN_SLOT_TYPE + "=? AND s." + COLUMN_SLOT_DATE + "=?" +
+                " ORDER BY s." + COLUMN_SLOT_START_TIME + " ASC";
+        Cursor cursor = db.rawQuery(query, new String[]{volunteerEmail, "tutoring", today});
+        if (cursor.moveToFirst()) {
+            do {
+                co.edu.aulasenora.models.ScheduleSlot slot = new co.edu.aulasenora.models.ScheduleSlot(
+                        cursor.getInt(0), cursor.getInt(1), cursor.getString(2),
+                        cursor.getString(3), cursor.getString(4), cursor.getString(5),
+                        cursor.getString(6), cursor.getString(7), cursor.getString(8),
+                        cursor.getString(9), cursor.getString(10)
+                );
+                slot.setAulaName(cursor.getString(11));
+                sessions.add(slot);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return sessions;
+    }
+
     public java.util.List<co.edu.aulasenora.models.ScheduleSlot> getAvailableScheduleSlotsForAula(int aulaId) {
         java.util.List<co.edu.aulasenora.models.ScheduleSlot> slots = new java.util.ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -1029,6 +1095,32 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_MATERIAL_MIME_TYPE, mimeType);
         values.put(COLUMN_MATERIAL_FILE_SIZE, fileSize);
         return db.insert(TABLE_SUPPORT_MATERIALS, null, values);
+    }
+
+    public java.util.List<co.edu.aulasenora.models.SupportMaterial> getRecentMaterialsByVolunteer(String volunteerEmail, int limit) {
+        java.util.List<co.edu.aulasenora.models.SupportMaterial> materials = new java.util.ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT sm.*, COALESCE(dl.cnt, 0) FROM " + TABLE_SUPPORT_MATERIALS + " sm" +
+                " INNER JOIN " + TABLE_AULAS + " a ON sm." + COLUMN_MATERIAL_AULA_ID + " = a." + COLUMN_AULA_ID +
+                " LEFT JOIN (SELECT " + COLUMN_DOWNLOAD_MATERIAL_ID + ", COUNT(*) as cnt FROM " + TABLE_MATERIAL_DOWNLOADS +
+                " GROUP BY " + COLUMN_DOWNLOAD_MATERIAL_ID + ") dl" +
+                " ON sm." + COLUMN_MATERIAL_ID + " = dl." + COLUMN_DOWNLOAD_MATERIAL_ID +
+                " WHERE a." + COLUMN_AULA_VOLUNTEER_EMAIL + "=?" +
+                " ORDER BY sm." + COLUMN_MATERIAL_CREATED_AT + " DESC LIMIT ?";
+        Cursor cursor = db.rawQuery(query, new String[]{volunteerEmail, String.valueOf(limit)});
+        if (cursor.moveToFirst()) {
+            do {
+                co.edu.aulasenora.models.SupportMaterial m = new co.edu.aulasenora.models.SupportMaterial(
+                        cursor.getInt(0), cursor.getInt(1), cursor.getString(2),
+                        cursor.getString(3), cursor.getString(4), cursor.getString(5),
+                        cursor.getString(6), cursor.getLong(7), cursor.getString(8),
+                        cursor.getInt(9)
+                );
+                materials.add(m);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return materials;
     }
 
     public java.util.List<co.edu.aulasenora.models.SupportMaterial> getSupportMaterials(int aulaId) {
@@ -1208,6 +1300,109 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         cursor.close();
         return aulasList;
+    }
+
+    public java.util.List<co.edu.aulasenora.models.NotificationItem> getPendingAccessNotifications(String volunteerEmail) {
+        java.util.List<co.edu.aulasenora.models.NotificationItem> items = new java.util.ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT ar." + COLUMN_REQUEST_ID + ", a." + COLUMN_AULA_ID + ", a." + COLUMN_AULA_NAME +
+                ", u." + COLUMN_NAME + ", ar." + COLUMN_REQUEST_STUDENT_EMAIL + ", ar." + COLUMN_REQUEST_CREATED_AT +
+                " FROM " + TABLE_ACCESS_REQUESTS + " ar" +
+                " INNER JOIN " + TABLE_AULAS + " a ON ar." + COLUMN_REQUEST_AULA_ID + " = a." + COLUMN_AULA_ID +
+                " INNER JOIN " + TABLE_USERS + " u ON ar." + COLUMN_REQUEST_STUDENT_EMAIL + " = u." + COLUMN_EMAIL +
+                " WHERE a." + COLUMN_AULA_VOLUNTEER_EMAIL + "=? AND ar." + COLUMN_REQUEST_STATUS + "=?" +
+                " ORDER BY ar." + COLUMN_REQUEST_CREATED_AT + " DESC";
+        Cursor cursor = db.rawQuery(query, new String[]{volunteerEmail, "pending"});
+        if (cursor.moveToFirst()) {
+            do {
+                items.add(new co.edu.aulasenora.models.NotificationItem(
+                        "access",
+                        "Solicitud de acceso",
+                        cursor.getString(3) + " quiere unirse a " + cursor.getString(2),
+                        cursor.getString(5),
+                        cursor.getInt(1),
+                        cursor.getInt(0),
+                        cursor.getString(4),
+                        0
+                ));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return items;
+    }
+
+    public java.util.List<co.edu.aulasenora.models.NotificationItem> getPendingTutoringNotifications(String volunteerEmail) {
+        java.util.List<co.edu.aulasenora.models.NotificationItem> items = new java.util.ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT tr." + COLUMN_TUTORING_ID + ", a." + COLUMN_AULA_ID + ", a." + COLUMN_AULA_NAME +
+                ", u." + COLUMN_NAME + ", tr." + COLUMN_TUTORING_TOPIC + ", tr." + COLUMN_TUTORING_STUDENT_EMAIL +
+                ", tr." + COLUMN_TUTORING_CREATED_AT +
+                " FROM " + TABLE_TUTORING_REQUESTS + " tr" +
+                " INNER JOIN " + TABLE_AULAS + " a ON tr." + COLUMN_TUTORING_AULA_ID + " = a." + COLUMN_AULA_ID +
+                " INNER JOIN " + TABLE_USERS + " u ON tr." + COLUMN_TUTORING_STUDENT_EMAIL + " = u." + COLUMN_EMAIL +
+                " WHERE a." + COLUMN_AULA_VOLUNTEER_EMAIL + "=? AND tr." + COLUMN_TUTORING_STATUS + "=?" +
+                " ORDER BY tr." + COLUMN_TUTORING_CREATED_AT + " DESC";
+        Cursor cursor = db.rawQuery(query, new String[]{volunteerEmail, "pending"});
+        if (cursor.moveToFirst()) {
+            do {
+                items.add(new co.edu.aulasenora.models.NotificationItem(
+                        "tutoring",
+                        "Solicitud de tutoría",
+                        cursor.getString(3) + " pide ayuda sobre " + cursor.getString(4),
+                        cursor.getString(6),
+                        cursor.getInt(1),
+                        cursor.getInt(0),
+                        cursor.getString(5),
+                        0
+                ));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return items;
+    }
+
+    public java.util.List<co.edu.aulasenora.models.NotificationItem> getUnreadChatNotifications(String volunteerEmail) {
+        java.util.List<co.edu.aulasenora.models.NotificationItem> items = new java.util.ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT a." + COLUMN_AULA_ID + ", a." + COLUMN_AULA_NAME +
+                ", COALESCE(r." + COLUMN_READ_LAST_MESSAGE_ID + ", 0) as last_read" +
+                " FROM " + TABLE_AULAS + " a" +
+                " LEFT JOIN " + TABLE_CHAT_READ_STATUS + " r ON a." + COLUMN_AULA_ID + " = r." + COLUMN_READ_AULA_ID +
+                " AND r." + COLUMN_READ_USER_EMAIL + "=?" +
+                " WHERE a." + COLUMN_AULA_VOLUNTEER_EMAIL + "=?" +
+                " ORDER BY a." + COLUMN_AULA_CREATED_AT + " DESC";
+        Cursor cursor = db.rawQuery(query, new String[]{volunteerEmail, volunteerEmail});
+        if (cursor.moveToFirst()) {
+            do {
+                int aulaId = cursor.getInt(0);
+                String aulaName = cursor.getString(1);
+                int lastRead = cursor.getInt(2);
+
+                Cursor msgCursor = db.rawQuery("SELECT COUNT(*), MAX(" + COLUMN_CHAT_CREATED_AT + ")" +
+                        " FROM " + TABLE_CHAT_MESSAGES +
+                        " WHERE " + COLUMN_CHAT_AULA_ID + "=? AND " + COLUMN_CHAT_ID + ">?",
+                        new String[]{String.valueOf(aulaId), String.valueOf(lastRead)});
+                if (msgCursor.moveToFirst()) {
+                    int count = msgCursor.getInt(0);
+                    String lastTime = msgCursor.getString(1);
+                    if (count > 0) {
+                        items.add(new co.edu.aulasenora.models.NotificationItem(
+                                "chat",
+                                "Nuevo mensaje en " + aulaName,
+                                count + " mensaje" + (count == 1 ? "" : "s") + " nuevo" + (count == 1 ? "" : "s"),
+                                lastTime != null ? lastTime : "",
+                                aulaId,
+                                0,
+                                null,
+                                count
+                        ));
+                    }
+                }
+                msgCursor.close();
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return items;
     }
 
     public java.util.List<co.edu.aulasenora.models.Aula> getChatAulasForStudent(String studentEmail) {

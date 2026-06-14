@@ -12,6 +12,7 @@ public class ScheduleSlot {
     private String targetStudentEmail;
     private String targetStudentName;
     private String createdAt;
+    private String aulaName;
 
     public ScheduleSlot(int id, int aulaId, String volunteerEmail, String slotDate, String startTime,
                         String endTime, String type, String topic, String targetStudentEmail,
@@ -40,4 +41,6 @@ public class ScheduleSlot {
     public String getTargetStudentEmail() { return targetStudentEmail; }
     public String getTargetStudentName() { return targetStudentName; }
     public String getCreatedAt() { return createdAt; }
+    public String getAulaName() { return aulaName; }
+    public void setAulaName(String aulaName) { this.aulaName = aulaName; }
 }
