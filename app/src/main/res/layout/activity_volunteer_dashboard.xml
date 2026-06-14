@@ -66,6 +66,7 @@
 
                 <!-- Red notification badge -->
                 <TextView
+                    android:id="@+id/badgeNotifUnread"
                     android:layout_width="18dp"
                     android:layout_height="18dp"
                     android:layout_gravity="top|end"
@@ -74,10 +75,11 @@
                     android:background="@drawable/bg_circle_cyan"
                     android:backgroundTint="#F44336"
                     android:gravity="center"
-                    android:text="2"
+                    android:text="!"
                     android:textColor="@color/white"
                     android:textSize="10sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:visibility="gone" />
             </FrameLayout>
         </RelativeLayout>
 
@@ -203,69 +205,13 @@
             android:paddingTop="4dp"
             android:paddingBottom="16dp">
 
-            <!-- ===== Sesiones Próximas ===== -->
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cardNextSession"
+<!-- ===== Sesiones Próximas Container ===== -->
+            <LinearLayout
+                android:id="@+id/llUpcomingContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                app:cardBackgroundColor="#E8F5E9"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp">
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
-
-                    <FrameLayout
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:background="@drawable/bg_circle_cyan"
-                        android:backgroundTint="#4CAF50">
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_calendar"
-                            app:tint="@color/white" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Sesiones Próximas"
-                            android:textColor="@color/textDark"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="María López - Hoy\n3:00 PM"
-                            android:textColor="@color/textGray"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/btnPrepare"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_rounded_orange"
-                        android:paddingHorizontal="14dp"
-                        android:paddingVertical="8dp"
-                        android:text="Preparar"
-                        android:textColor="@color/white"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
+                android:orientation="vertical"
+                android:visibility="gone" />
 
             <!-- ===== Mis Aulas Header ===== -->
             <LinearLayout
@@ -365,85 +311,13 @@
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cardActiveTutoring"
+<!-- ===== Tutorías de Hoy Container ===== -->
+            <LinearLayout
+                android:id="@+id/llActiveTutoringContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="1dp">
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
-
-                    <FrameLayout
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:background="@drawable/bg_circle_orange">
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_gravity="center"
-                            android:src="@drawable/ic_users"
-                            app:tint="@color/white" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="María López"
-                            android:textColor="@color/textDark"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Inglés - Present Perfect"
-                            android:textColor="@color/textGray"
-                            android:textSize="12sp" />
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-                            <ImageView
-                                android:layout_width="12dp"
-                                android:layout_height="12dp"
-                                android:src="@drawable/ic_clock" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:text="Hoy 3:00 PM • 1h"
-                                android:textColor="@color/textGray"
-                                android:textSize="11sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/btnViewTutoring"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_rounded_green"
-                        android:paddingHorizontal="16dp"
-                        android:paddingVertical="8dp"
-                        android:text="Ver"
-                        android:textColor="@color/white"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
+                android:orientation="vertical"
+                android:visibility="gone" />
 
             <!-- ===== Mis Recursos Compartidos ===== -->
             <LinearLayout
@@ -468,119 +342,23 @@
                     android:textSize="14sp" />
             </LinearLayout>
 
-            <!-- Resource 1: Material Álgebra Lineal -->
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cardResource1"
+            <LinearLayout
+                android:id="@+id/llResourcesContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="1dp">
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
+                android:orientation="vertical"
+                android:visibility="gone" />
 
-                    <ImageView
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:src="@drawable/ic_resource"
-                        app:tint="#00BBD4" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Material Álgebra Lineal"
-                            android:textColor="@color/textDark"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-                            <ImageView
-                                android:layout_width="12dp"
-                                android:layout_height="12dp"
-                                android:src="@drawable/ic_trending" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:text="24 descargas  •  15 Mar"
-                                android:textColor="@color/textGray"
-                                android:textSize="11sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
-            <!-- Resource 2: Ejercicios de Cálculo -->
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cardResource2"
+            <TextView
+                android:id="@+id/tvEmptyResources"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                app:cardBackgroundColor="@color/white"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="1dp">
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
-
-                    <ImageView
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:src="@drawable/ic_resource"
-                        app:tint="#00BBD4" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Ejercicios de Cálculo"
-                            android:textColor="@color/textDark"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-                            <ImageView
-                                android:layout_width="12dp"
-                                android:layout_height="12dp"
-                                android:src="@drawable/ic_trending" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:text="18 descargas  •  12 Mar"
-                                android:textColor="@color/textGray"
-                                android:textSize="11sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:text="No has compartido material de apoyo"
+                android:textColor="@color/textGray"
+                android:textSize="14sp"
+                android:visibility="visible" />
 
             <!-- ===== Solicitudes de Acceso ===== -->
             <LinearLayout

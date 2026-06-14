@@ -1,9 +1,15 @@
 package co.edu.aulasenora;
 
+import android.app.AlertDialog;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.OpenableColumns;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -16,13 +22,21 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.textfield.TextInputEditText;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.List;
+import java.util.UUID;
 import android.content.Intent;
 
 import co.edu.aulasenora.databinding.ActivityVolunteerDashboardBinding;
 import co.edu.aulasenora.db.DatabaseHelper;
 import co.edu.aulasenora.models.AccessRequest;
 import co.edu.aulasenora.models.Aula;
+import co.edu.aulasenora.models.ScheduleSlot;
+import co.edu.aulasenora.models.SupportMaterial;
 
 public class VolunteerDashboardActivity extends AppCompatActivity {
 
@@ -30,6 +44,11 @@ public class VolunteerDashboardActivity extends AppCompatActivity {
     private DatabaseHelper dbHelper;
     private String userEmail;
     private long totalSeconds = 0;
+    private static final int FILE_PICK_REQUEST_CODE = 1002;
+    private Uri pendingFileUri;
+    private String pendingFileName;
+    private String pendingMimeType;
+    private long pendingFileSize;
     private Handler timerHandler = new Handler(Looper.getMainLooper());
     private Runnable timerRunnable = new Runnable() {
         @Override
@@ -67,6 +86,7 @@ public class VolunteerDashboardActivity extends AppCompatActivity {
             timerHandler.postDelayed(timerRunnable, 1000);
             
             loadAulas();
+            loadNotifBadge();
         }
 
         // Setup placeholder click listeners for all interactive elements
@@ -75,19 +95,13 @@ public class VolunteerDashboardActivity extends AppCompatActivity {
 
     private void setupPlaceholderClicks() {
         // Notification bell
-        binding.btnNotifications.setOnClickListener(v ->
-            Toast.makeText(this, "Notificaciones (En construcción)", Toast.LENGTH_SHORT).show()
-        );
+        binding.btnNotifications.setOnClickListener(v -> {
+            Intent intent = new Intent(this, NotificationsActivity.class);
+            intent.putExtra("user_email", userEmail);
+            startActivity(intent);
+        });
 
-        // Prepare session button
-        binding.btnPrepare.setOnClickListener(v ->
-            Toast.makeText(this, "Preparar sesión (En construcción)", Toast.LENGTH_SHORT).show()
-        );
-
-        // Next session card
-        binding.cardNextSession.setOnClickListener(v ->
-            Toast.makeText(this, "Sesiones próximas (En construcción)", Toast.LENGTH_SHORT).show()
-        );
+        // Next session card - functionality moved to loadUpcomingSessions()
 
         // View all classes
         binding.btnViewAllClasses.setOnClickListener(v -> {
@@ -103,29 +117,10 @@ public class VolunteerDashboardActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // Active tutoring card
-        binding.cardActiveTutoring.setOnClickListener(v ->
-            Toast.makeText(this, "Tutoría activa con María López (En construcción)", Toast.LENGTH_SHORT).show()
-        );
-
-        // View tutoring button
-        binding.btnViewTutoring.setOnClickListener(v ->
-            Toast.makeText(this, "Ver tutoría (En construcción)", Toast.LENGTH_SHORT).show()
-        );
+        // Active tutoring card - functionality moved to loadActiveTutoring()
 
         // Add resource button
-        binding.btnAddResource.setOnClickListener(v ->
-            Toast.makeText(this, "Agregar recurso (En construcción)", Toast.LENGTH_SHORT).show()
-        );
-
-        // Resource cards
-        binding.cardResource1.setOnClickListener(v ->
-            Toast.makeText(this, "Material Álgebra Lineal (En construcción)", Toast.LENGTH_SHORT).show()
-        );
-
-        binding.cardResource2.setOnClickListener(v ->
-            Toast.makeText(this, "Ejercicios de Cálculo (En construcción)", Toast.LENGTH_SHORT).show()
-        );
+        binding.btnAddResource.setOnClickListener(v -> pickFile());
 
         // Ver todas solicitudes
         binding.btnViewAllRequests.setOnClickListener(v -> {
@@ -250,12 +245,238 @@ public class VolunteerDashboardActivity extends AppCompatActivity {
         }
     }
 
+    private void loadResources() {
+        if (userEmail == null) return;
+        List<SupportMaterial> materials = dbHelper.getRecentMaterialsByVolunteer(userEmail, 2);
+        binding.llResourcesContainer.removeAllViews();
+
+        if (materials.isEmpty()) {
+            binding.llResourcesContainer.setVisibility(View.GONE);
+            binding.tvEmptyResources.setVisibility(View.VISIBLE);
+            return;
+        }
+        binding.llResourcesContainer.setVisibility(View.VISIBLE);
+        binding.tvEmptyResources.setVisibility(View.GONE);
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        for (SupportMaterial material : materials) {
+            View cardView = inflater.inflate(R.layout.item_resource_card, binding.llResourcesContainer, false);
+
+            TextView tvName = cardView.findViewById(R.id.tvResourceName);
+            TextView tvInfo = cardView.findViewById(R.id.tvResourceInfo);
+
+            tvName.setText(material.getCustomName());
+
+            String rawDate = material.getCreatedAt();
+            String dateStr;
+            if (rawDate != null && rawDate.length() >= 10) {
+                String[] parts = rawDate.substring(0, 10).split("-");
+                dateStr = parts[2] + "/" + parts[1] + "/" + parts[0];
+            } else {
+                dateStr = rawDate;
+            }
+            tvInfo.setText(material.getViewCount() + " estudiantes  •  " + dateStr);
+
+            binding.llResourcesContainer.addView(cardView);
+        }
+    }
+
+    private void loadActiveTutoring() {
+        List<ScheduleSlot> sessions = dbHelper.getTodayTutoringForVolunteer(userEmail);
+        binding.llActiveTutoringContainer.removeAllViews();
+
+        if (sessions.isEmpty()) {
+            binding.llActiveTutoringContainer.setVisibility(View.GONE);
+            return;
+        }
+        binding.llActiveTutoringContainer.setVisibility(View.VISIBLE);
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        for (ScheduleSlot slot : sessions) {
+            View cardView = inflater.inflate(R.layout.item_active_tutoring_card, binding.llActiveTutoringContainer, false);
+
+            TextView tvTitle = cardView.findViewById(R.id.tvTutoringTitle);
+            TextView tvTopic = cardView.findViewById(R.id.tvTutoringTopic);
+            TextView tvTime = cardView.findViewById(R.id.tvTutoringTime);
+
+            boolean hasTargetStudent = slot.getTargetStudentEmail() != null && !slot.getTargetStudentEmail().isEmpty();
+            if (hasTargetStudent) {
+                tvTitle.setText(slot.getTargetStudentName() != null ? slot.getTargetStudentName() : slot.getTargetStudentEmail());
+            } else {
+                tvTitle.setText(slot.getAulaName() != null ? slot.getAulaName() : "Aula " + slot.getAulaId());
+            }
+
+            tvTopic.setText(slot.getTopic() != null ? slot.getTopic() : "");
+            String time = slot.getStartTime() != null && slot.getStartTime().length() >= 5
+                    ? slot.getStartTime().substring(0, 5) : slot.getStartTime();
+            tvTime.setText("Hoy " + time);
+
+            cardView.setOnClickListener(v -> {
+                Intent intent = new Intent(VolunteerDashboardActivity.this, ManageAulaActivity.class);
+                intent.putExtra("aula_id", slot.getAulaId());
+                intent.putExtra("user_email", userEmail);
+                startActivity(intent);
+            });
+
+            binding.llActiveTutoringContainer.addView(cardView);
+        }
+    }
+
+    private void loadUpcomingSessions() {
+        List<ScheduleSlot> sessions = dbHelper.getUpcomingTutoringForVolunteer(userEmail, 2);
+        binding.llUpcomingContainer.removeAllViews();
+
+        if (sessions.isEmpty()) {
+            binding.llUpcomingContainer.setVisibility(View.GONE);
+            return;
+        }
+        binding.llUpcomingContainer.setVisibility(View.VISIBLE);
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        for (ScheduleSlot slot : sessions) {
+            View cardView = inflater.inflate(R.layout.item_upcoming_session_card, binding.llUpcomingContainer, false);
+
+            TextView tvAulaName = cardView.findViewById(R.id.tvUpcomingAulaName);
+            TextView tvDate = cardView.findViewById(R.id.tvUpcomingDate);
+
+            tvAulaName.setText(slot.getAulaName() != null ? slot.getAulaName() : "Aula " + slot.getAulaId());
+            tvDate.setText(slot.getSlotDate());
+
+            cardView.setOnClickListener(v -> {
+                Intent intent = new Intent(VolunteerDashboardActivity.this, ManageAulaActivity.class);
+                intent.putExtra("aula_id", slot.getAulaId());
+                intent.putExtra("user_email", userEmail);
+                startActivity(intent);
+            });
+
+            binding.llUpcomingContainer.addView(cardView);
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
         if (userEmail != null) {
             loadAulas();
             loadAccessRequests();
+            loadUpcomingSessions();
+            loadActiveTutoring();
+            loadResources();
+            loadNotifBadge();
+        }
+    }
+
+    private void loadNotifBadge() {
+        int total = 0;
+        total += dbHelper.getPendingAccessNotifications(userEmail).size();
+        total += dbHelper.getPendingTutoringNotifications(userEmail).size();
+        total += dbHelper.getUnreadChatNotifications(userEmail).size();
+        binding.badgeNotifUnread.setVisibility(total > 0 ? View.VISIBLE : View.GONE);
+    }
+
+    private void pickFile() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        startActivityForResult(intent, FILE_PICK_REQUEST_CODE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == FILE_PICK_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+            pendingFileUri = data.getData();
+            if (pendingFileUri != null) {
+                try (android.database.Cursor cursor = getContentResolver().query(pendingFileUri, null, null, null, null)) {
+                    if (cursor != null && cursor.moveToFirst()) {
+                        int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                        int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
+                        pendingFileName = nameIndex >= 0 ? cursor.getString(nameIndex) : "archivo";
+                        pendingFileSize = sizeIndex >= 0 ? cursor.getLong(sizeIndex) : 0;
+                    }
+                }
+                pendingMimeType = getContentResolver().getType(pendingFileUri);
+                if (pendingMimeType == null) pendingMimeType = "*/*";
+                showUploadDialog();
+            }
+        }
+    }
+
+    private void showUploadDialog() {
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_upload_resource, null);
+
+        TextView tvFileName = dialogView.findViewById(R.id.tvSelectedFileName);
+        Spinner spAula = dialogView.findViewById(R.id.spAulaSelector);
+        TextInputEditText etCustomName = dialogView.findViewById(R.id.etCustomName);
+        Button btnSave = dialogView.findViewById(R.id.btnSaveUpload);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancelUpload);
+
+        tvFileName.setText("Archivo seleccionado: " + pendingFileName);
+        etCustomName.setText(pendingFileName);
+
+        List<Aula> aulas = dbHelper.getAulasByVolunteer(userEmail);
+        String[] aulaNames = new String[aulas.size()];
+        final int[] aulaIds = new int[aulas.size()];
+        for (int i = 0; i < aulas.size(); i++) {
+            aulaNames[i] = aulas.get(i).getName();
+            aulaIds[i] = aulas.get(i).getId();
+        }
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, aulaNames);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spAula.setAdapter(adapter);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        btnSave.setOnClickListener(v -> {
+            String customName = etCustomName.getText().toString().trim();
+            if (customName.isEmpty()) {
+                Toast.makeText(this, "El nombre es obligatorio", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (aulas.isEmpty()) {
+                Toast.makeText(this, "No tienes aulas para subir material", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            int selectedPosition = spAula.getSelectedItemPosition();
+            int selectedAulaId = aulaIds[selectedPosition];
+            saveUploadedFile(customName, selectedAulaId);
+            dialog.dismiss();
+        });
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+    }
+
+    private void saveUploadedFile(String customName, int aulaId) {
+        try {
+            File dir = new File(getFilesDir(), "materials/aula_" + aulaId);
+            if (!dir.exists()) dir.mkdirs();
+
+            String uniqueName = UUID.randomUUID().toString() + "_" + pendingFileName;
+            File destFile = new File(dir, uniqueName);
+
+            try (InputStream in = getContentResolver().openInputStream(pendingFileUri);
+                 FileOutputStream out = new FileOutputStream(destFile)) {
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, bytesRead);
+                }
+            }
+
+            long result = dbHelper.createSupportMaterial(aulaId, userEmail, customName,
+                    pendingFileName, destFile.getAbsolutePath(), pendingMimeType, pendingFileSize);
+            if (result != -1) {
+                Toast.makeText(this, "Material subido", Toast.LENGTH_SHORT).show();
+                loadResources();
+            } else {
+                Toast.makeText(this, "Error al guardar el material", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Error al subir el archivo", Toast.LENGTH_SHORT).show();
         }
     }
 
