@@ -88,13 +88,22 @@
 
                             <TextView
                                 android:id="@+id/tvVolunteerName"
-                                android:layout_width="wrap_content"
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="8dp"
+                                android:layout_weight="1"
                                 android:text="Voluntario"
                                 android:textColor="@color/studentDark"
                                 android:textSize="14sp"
-                                android:textStyle="bold" />
+                                android:textStyle="bold"
+                                android:clickable="true"
+                                android:focusable="true" />
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_marginStart="4dp"
+                                android:src="@drawable/ic_chevron_right_cyan" />
                         </LinearLayout>
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>

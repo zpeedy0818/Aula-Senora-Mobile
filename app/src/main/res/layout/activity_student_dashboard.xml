@@ -150,7 +150,27 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="24dp">
-            
+
+            <!-- ===== SESIONES PRÓXIMAS ===== -->
+            <LinearLayout
+                android:id="@+id/llUpcomingContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone" />
+
+            <!-- ===== TUTORÍAS ACTIVAS ===== -->
+            <TextView
+                style="@style/SectionLabel"
+                android:text="Tutorías Activas" />
+
+            <LinearLayout
+                android:id="@+id/llActiveTutoringContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone" />
+
             <!-- Mis Aulas -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -342,25 +362,6 @@
                 android:layout_height="wrap_content"
                 android:text="Inicio"
                 android:textColor="@color/primaryCyan"
-                android:textSize="10sp" />
-        </LinearLayout>
-        <LinearLayout
-            android:id="@+id/navHistorial"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_book"
-                app:tint="@color/textGray" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Historial"
-                android:textColor="@color/textGray"
                 android:textSize="10sp" />
         </LinearLayout>
         <LinearLayout
