@@ -54,6 +54,9 @@ public class VolunteerDashboardActivity extends AppCompatActivity {
         @Override
         public void run() {
             totalSeconds++;
+            if (totalSeconds % 30 == 0) {
+                dbHelper.updateTimeSpent(userEmail, totalSeconds);
+            }
             updateHoursUI();
             timerHandler.postDelayed(this, 1000);
         }
@@ -87,6 +90,7 @@ public class VolunteerDashboardActivity extends AppCompatActivity {
             
             loadAulas();
             loadNotifBadge();
+            loadStatsHeader();
         }
 
         // Setup placeholder click listeners for all interactive elements
@@ -139,9 +143,12 @@ public class VolunteerDashboardActivity extends AppCompatActivity {
             loadAccessRequests();
         });
 
-        binding.navPerfil.setOnClickListener(v ->
-            Toast.makeText(this, "Perfil (En construcción)", Toast.LENGTH_SHORT).show()
-        );
+        binding.navPerfil.setOnClickListener(v -> {
+            Intent intent = new Intent(this, ProfileActivity.class);
+            intent.putExtra("user_email", userEmail);
+            intent.putExtra("is_volunteer", true);
+            startActivity(intent);
+        });
 
         binding.navChat.setOnClickListener(v -> {
             Intent intent = new Intent(this, ChatListActivity.class);
@@ -363,6 +370,7 @@ public class VolunteerDashboardActivity extends AppCompatActivity {
             loadActiveTutoring();
             loadResources();
             loadNotifBadge();
+            loadStatsHeader();
         }
     }
 
@@ -481,8 +489,16 @@ public class VolunteerDashboardActivity extends AppCompatActivity {
     }
 
     private void updateHoursUI() {
-        long hours = totalSeconds / 3600;
-        binding.tvDonatedHours.setText(String.valueOf(hours));
+        double hours = totalSeconds / 3600.0;
+        binding.tvDonatedHours.setText(String.format("%.1f", hours));
+    }
+
+    private void loadStatsHeader() {
+        if (userEmail == null) return;
+        int studentsHelped = dbHelper.getDistinctStudentsHelpedCount(userEmail);
+        binding.tvStudentsHelped.setText(String.valueOf(studentsHelped));
+        double avgRating = dbHelper.getVolunteerAverageRating(userEmail);
+        binding.tvRatingValue.setText(String.format("%.1f", avgRating));
     }
 
     @Override

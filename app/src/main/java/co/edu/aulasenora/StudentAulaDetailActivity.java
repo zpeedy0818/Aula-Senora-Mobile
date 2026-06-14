@@ -3,12 +3,15 @@ package co.edu.aulasenora;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -73,6 +76,10 @@ public class StudentAulaDetailActivity extends AppCompatActivity {
                     binding.tvVolunteerName.setText("Por: " + volunteerName);
                 }
             }
+        }
+
+        if (aula != null) {
+            binding.tvVolunteerName.setOnClickListener(v -> showRateVolunteerDialog());
         }
 
         binding.btnRequestTutoring.setOnClickListener(v -> showRequestTutoringDialog());
@@ -425,6 +432,76 @@ public class StudentAulaDetailActivity extends AppCompatActivity {
             });
 
             binding.llMaterials.addView(itemView);
+        }
+    }
+
+    private void showRateVolunteerDialog() {
+        String volunteerEmail = aula.getVolunteerEmail();
+        String volunteerName = dbHelper.getUserName(volunteerEmail);
+        String specialty = dbHelper.getUserSpecialty(volunteerEmail);
+
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_rate_volunteer, null);
+
+        TextView tvName = dialogView.findViewById(R.id.tvRateVolunteerName);
+        TextView tvSpecialty = dialogView.findViewById(R.id.tvRateSpecialty);
+        TextView tvInitial = dialogView.findViewById(R.id.tvRateInitial);
+        LinearLayout llStars = dialogView.findViewById(R.id.llStars);
+        Button btnSave = dialogView.findViewById(R.id.btnSaveRating);
+
+        tvName.setText(volunteerName != null ? volunteerName : volunteerEmail);
+        if (volunteerName != null && !volunteerName.isEmpty()) {
+            tvInitial.setText(String.valueOf(volunteerName.charAt(0)).toUpperCase());
+        } else if (volunteerEmail != null && !volunteerEmail.isEmpty()) {
+            tvInitial.setText(String.valueOf(volunteerEmail.charAt(0)).toUpperCase());
+        }
+
+        if (specialty != null && !specialty.isEmpty()) {
+            tvSpecialty.setVisibility(View.VISIBLE);
+            tvSpecialty.setText(specialty);
+        }
+
+        int currentRating = dbHelper.getVolunteerRating(volunteerEmail, userEmail, aulaId);
+        final int[] selectedRating = {currentRating};
+
+        final ImageView[] stars = new ImageView[llStars.getChildCount()];
+        for (int i = 0; i < llStars.getChildCount(); i++) {
+            stars[i] = (ImageView) llStars.getChildAt(i);
+            final int starValue = i + 1;
+            updateStar(stars[i], starValue <= currentRating);
+
+            stars[i].setOnClickListener(v -> {
+                selectedRating[0] = starValue;
+                for (int j = 0; j < stars.length; j++) {
+                    updateStar(stars[j], j < starValue);
+                }
+            });
+        }
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        btnSave.setOnClickListener(v -> {
+            if (selectedRating[0] > 0) {
+                dbHelper.saveVolunteerRating(volunteerEmail, userEmail, aulaId, selectedRating[0]);
+                Toast.makeText(this, "Calificación guardada: " + selectedRating[0] + " estrellas", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            } else {
+                Toast.makeText(this, "Selecciona una calificación", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        dialog.show();
+    }
+
+    private void updateStar(ImageView star, boolean filled) {
+        if (filled) {
+            star.setColorFilter(Color.parseColor("#FFB300"));
+            star.setAlpha(1.0f);
+        } else {
+            star.setColorFilter(Color.parseColor("#D1D5DB"));
+            star.setAlpha(0.4f);
         }
     }
 }

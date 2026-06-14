@@ -24,6 +24,7 @@ import java.util.List;
 import co.edu.aulasenora.databinding.ActivityStudentDashboardBinding;
 import co.edu.aulasenora.db.DatabaseHelper;
 import co.edu.aulasenora.models.Aula;
+import co.edu.aulasenora.models.ScheduleSlot;
 
 public class StudentDashboardActivity extends AppCompatActivity {
 
@@ -36,6 +37,9 @@ public class StudentDashboardActivity extends AppCompatActivity {
         @Override
         public void run() {
             totalSeconds++;
+            if (totalSeconds % 30 == 0) {
+                dbHelper.updateTimeSpent(userEmail, totalSeconds);
+            }
             updateHoursUI();
             timerHandler.postDelayed(this, 1000);
         }
@@ -81,10 +85,6 @@ public class StudentDashboardActivity extends AppCompatActivity {
             Toast.makeText(this, "Ya estás en Inicio", Toast.LENGTH_SHORT).show()
         );
 
-        binding.navHistorial.setOnClickListener(v ->
-            Toast.makeText(this, "Historial (En construcción)", Toast.LENGTH_SHORT).show()
-        );
-
         binding.navChat.setOnClickListener(v -> {
             Intent intent = new Intent(this, ChatListActivity.class);
             intent.putExtra("user_email", userEmail);
@@ -92,9 +92,12 @@ public class StudentDashboardActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        binding.navPerfil.setOnClickListener(v ->
-            Toast.makeText(this, "Perfil (En construcción)", Toast.LENGTH_SHORT).show()
-        );
+        binding.navPerfil.setOnClickListener(v -> {
+            Intent intent = new Intent(this, ProfileActivity.class);
+            intent.putExtra("user_email", userEmail);
+            intent.putExtra("is_volunteer", false);
+            startActivity(intent);
+        });
     }
 
     private void setupSearch() {
@@ -129,10 +132,86 @@ public class StudentDashboardActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (userEmail == null) return;
+        loadUpcomingSessions();
+        loadActiveTutoring();
+        loadChatUnreadBadge();
         loadMyAulas();
         if (!isSearching) {
             loadRecommendedAulas();
         }
+    }
+
+    private void loadUpcomingSessions() {
+        List<ScheduleSlot> sessions = dbHelper.getUpcomingTutoringForStudent(userEmail, 2);
+        binding.llUpcomingContainer.removeAllViews();
+
+        if (sessions.isEmpty()) {
+            binding.llUpcomingContainer.setVisibility(View.GONE);
+            return;
+        }
+        binding.llUpcomingContainer.setVisibility(View.VISIBLE);
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        for (ScheduleSlot slot : sessions) {
+            View cardView = inflater.inflate(R.layout.item_upcoming_session_card, binding.llUpcomingContainer, false);
+
+            TextView tvAulaName = cardView.findViewById(R.id.tvUpcomingAulaName);
+            TextView tvDate = cardView.findViewById(R.id.tvUpcomingDate);
+
+            tvAulaName.setText(slot.getAulaName() != null ? slot.getAulaName() : "Aula " + slot.getAulaId());
+            tvDate.setText(slot.getSlotDate());
+
+            cardView.setOnClickListener(v -> {
+                Intent intent = new Intent(StudentDashboardActivity.this, StudentAulaDetailActivity.class);
+                intent.putExtra("aula_id", slot.getAulaId());
+                intent.putExtra("user_email", userEmail);
+                startActivity(intent);
+            });
+
+            binding.llUpcomingContainer.addView(cardView);
+        }
+    }
+
+    private void loadActiveTutoring() {
+        List<ScheduleSlot> sessions = dbHelper.getTodayTutoringForStudent(userEmail);
+        binding.llActiveTutoringContainer.removeAllViews();
+
+        if (sessions.isEmpty()) {
+            binding.llActiveTutoringContainer.setVisibility(View.GONE);
+            return;
+        }
+        binding.llActiveTutoringContainer.setVisibility(View.VISIBLE);
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        for (ScheduleSlot slot : sessions) {
+            View cardView = inflater.inflate(R.layout.item_active_tutoring_student_card, binding.llActiveTutoringContainer, false);
+
+            TextView tvTitle = cardView.findViewById(R.id.tvTutoringTitle);
+            TextView tvTopic = cardView.findViewById(R.id.tvTutoringTopic);
+            TextView tvTime = cardView.findViewById(R.id.tvTutoringTime);
+
+            String aulaName = slot.getAulaName() != null ? slot.getAulaName() : "Aula " + slot.getAulaId();
+            tvTitle.setText("Tutoría en " + aulaName);
+
+            tvTopic.setText(slot.getTopic() != null ? slot.getTopic() : "");
+            String time = slot.getStartTime() != null && slot.getStartTime().length() >= 5
+                    ? slot.getStartTime().substring(0, 5) : slot.getStartTime();
+            tvTime.setText("Hoy " + time);
+
+            cardView.setOnClickListener(v -> {
+                Intent intent = new Intent(StudentDashboardActivity.this, StudentAulaDetailActivity.class);
+                intent.putExtra("aula_id", slot.getAulaId());
+                intent.putExtra("user_email", userEmail);
+                startActivity(intent);
+            });
+
+            binding.llActiveTutoringContainer.addView(cardView);
+        }
+    }
+
+    private void loadChatUnreadBadge() {
+        int unread = dbHelper.getUnreadChatNotifications(userEmail).size();
+        binding.badgeChatUnread.setVisibility(unread > 0 ? View.VISIBLE : View.GONE);
     }
 
     private void loadMyAulas() {
