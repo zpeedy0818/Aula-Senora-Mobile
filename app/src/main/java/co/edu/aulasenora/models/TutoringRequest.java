@@ -9,12 +9,13 @@ public class TutoringRequest {
     private String description;
     private String preferredDate;
     private String preferredTime;
+    private String preferredEndTime;
     private String status;
     private String createdAt;
 
     public TutoringRequest(int id, int aulaId, String studentEmail, String studentName, String topic,
                            String description, String preferredDate, String preferredTime,
-                           String status, String createdAt) {
+                           String preferredEndTime, String status, String createdAt) {
         this.id = id;
         this.aulaId = aulaId;
         this.studentEmail = studentEmail;
@@ -23,6 +24,7 @@ public class TutoringRequest {
         this.description = description;
         this.preferredDate = preferredDate;
         this.preferredTime = preferredTime;
+        this.preferredEndTime = preferredEndTime;
         this.status = status;
         this.createdAt = createdAt;
     }
@@ -35,6 +37,7 @@ public class TutoringRequest {
     public String getDescription() { return description; }
     public String getPreferredDate() { return preferredDate; }
     public String getPreferredTime() { return preferredTime; }
+    public String getPreferredEndTime() { return preferredEndTime; }
     public String getStatus() { return status; }
     public String getCreatedAt() { return createdAt; }
 }
