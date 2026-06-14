@@ -2,6 +2,8 @@ package co.edu.aulasenora;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,10 +17,12 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import java.io.File;
 import java.util.Calendar;
 import java.util.List;
 
@@ -26,6 +30,8 @@ import co.edu.aulasenora.databinding.ActivityStudentAulaDetailBinding;
 import co.edu.aulasenora.db.DatabaseHelper;
 import co.edu.aulasenora.models.Aula;
 import co.edu.aulasenora.models.ScheduleSlot;
+import co.edu.aulasenora.models.SupportMaterial;
+import co.edu.aulasenora.models.TutoringRequest;
 
 public class StudentAulaDetailActivity extends AppCompatActivity {
 
@@ -70,6 +76,14 @@ public class StudentAulaDetailActivity extends AppCompatActivity {
         }
 
         binding.btnRequestTutoring.setOnClickListener(v -> showRequestTutoringDialog());
+
+        binding.llChatButton.setOnClickListener(v -> {
+            Intent intent = new Intent(this, ChatDetailActivity.class);
+            intent.putExtra("aula_id", aulaId);
+            intent.putExtra("user_email", userEmail);
+            intent.putExtra("aula_name", aula != null ? aula.getName() : "Chat");
+            startActivity(intent);
+        });
     }
 
     @Override
@@ -78,6 +92,9 @@ public class StudentAulaDetailActivity extends AppCompatActivity {
         if (aulaId == -1) return;
         loadScheduleSlots();
         loadTutoringSessions();
+        loadSupportMaterials();
+        loadMyPendingRequest();
+        loadChatUnreadBadge();
     }
 
     private void loadScheduleSlots() {
@@ -281,6 +298,7 @@ public class StudentAulaDetailActivity extends AppCompatActivity {
 
             String preferredDate;
             String preferredTime;
+            String preferredEndTime;
 
             if (rbUseAvailable.isChecked()) {
                 int pos = spinnerSlots.getSelectedItemPosition();
@@ -291,6 +309,7 @@ public class StudentAulaDetailActivity extends AppCompatActivity {
                 ScheduleSlot selectedSlot = availableSlots.get(pos - 1);
                 preferredDate = selectedSlot.getSlotDate();
                 preferredTime = selectedSlot.getStartTime();
+                preferredEndTime = selectedSlot.getEndTime();
             } else {
                 if (customDate[0].isEmpty() || customTime[0].isEmpty()) {
                     Toast.makeText(this, "Completa la fecha y hora", Toast.LENGTH_SHORT).show();
@@ -298,13 +317,20 @@ public class StudentAulaDetailActivity extends AppCompatActivity {
                 }
                 preferredDate = customDate[0];
                 preferredTime = customTime[0];
+                // Default to 1 hour duration
+                String[] parts = preferredTime.split(":");
+                int hour = Integer.parseInt(parts[0]);
+                int minute = Integer.parseInt(parts[1]);
+                hour = (hour + 1) % 24;
+                preferredEndTime = String.format("%02d:%02d", hour, minute);
             }
 
             long result = dbHelper.createTutoringRequest(aulaId, userEmail, topic, "",
-                    preferredDate, preferredTime);
+                    preferredDate, preferredTime, preferredEndTime);
             if (result != -1) {
                 Toast.makeText(this, "Solicitud de tutoría enviada", Toast.LENGTH_LONG).show();
                 dialog.dismiss();
+                loadMyPendingRequest();
             } else {
                 Toast.makeText(this, "Error al enviar la solicitud", Toast.LENGTH_SHORT).show();
             }
@@ -313,5 +339,92 @@ public class StudentAulaDetailActivity extends AppCompatActivity {
         btnCancel.setOnClickListener(v -> dialog.dismiss());
 
         dialog.show();
+    }
+
+    private void loadChatUnreadBadge() {
+        int unread = dbHelper.getUnreadCount(aulaId, userEmail);
+        if (unread > 0) {
+            binding.badgeChatUnread.setVisibility(View.VISIBLE);
+        } else {
+            binding.badgeChatUnread.setVisibility(View.GONE);
+        }
+    }
+
+    private void loadMyPendingRequest() {
+        boolean hasPending = dbHelper.hasPendingTutoringRequest(aulaId, userEmail);
+
+        if (hasPending) {
+            binding.btnRequestTutoring.setVisibility(View.GONE);
+            binding.cardMyPendingRequest.setVisibility(View.VISIBLE);
+
+            TutoringRequest req = dbHelper.getPendingTutoringForStudent(aulaId, userEmail);
+            if (req != null) {
+                binding.tvMyRequestTopic.setText("Tema: " + req.getTopic());
+                String dateStr = req.getPreferredDate();
+                if (dateStr != null && dateStr.length() == 10) {
+                    String[] parts = dateStr.split("-");
+                    binding.tvMyRequestDate.setText("Fecha preferida: " + parts[2] + "/" + parts[1] + "/" + parts[0]);
+                } else {
+                    binding.tvMyRequestDate.setText("Fecha preferida: " + dateStr);
+                }
+                binding.tvMyRequestTime.setText("Hora preferida: " + req.getPreferredTime());
+            }
+        } else {
+            binding.btnRequestTutoring.setVisibility(View.VISIBLE);
+            binding.cardMyPendingRequest.setVisibility(View.GONE);
+        }
+    }
+
+    private void loadSupportMaterials() {
+        List<SupportMaterial> materials = dbHelper.getSupportMaterials(aulaId);
+        binding.llMaterials.removeAllViews();
+
+        if (materials.isEmpty()) {
+            binding.tvEmptyMaterials.setVisibility(View.VISIBLE);
+            return;
+        }
+        binding.tvEmptyMaterials.setVisibility(View.GONE);
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        for (SupportMaterial material : materials) {
+            View itemView = inflater.inflate(R.layout.item_support_material, binding.llMaterials, false);
+
+            TextView tvCustomName = itemView.findViewById(R.id.tvCustomName);
+            TextView tvUploadDate = itemView.findViewById(R.id.tvUploadDate);
+            TextView btnAction = itemView.findViewById(R.id.btnMaterialAction);
+
+            tvCustomName.setText(material.getCustomName());
+
+            String rawDate = material.getCreatedAt();
+            if (rawDate != null && rawDate.length() >= 10) {
+                String datePart = rawDate.substring(0, 10);
+                String[] parts = datePart.split("-");
+                tvUploadDate.setText(parts[2] + "/" + parts[1] + "/" + parts[0]);
+            } else {
+                tvUploadDate.setText(rawDate);
+            }
+
+            btnAction.setText("Descargar");
+            btnAction.setOnClickListener(v -> {
+                dbHelper.recordMaterialView(material.getId(), userEmail);
+                File file = new File(material.getFilePath());
+                if (file.exists()) {
+                    Uri fileUri = FileProvider.getUriForFile(this,
+                            getPackageName() + ".fileprovider", file);
+                    Intent intent = new Intent(Intent.ACTION_VIEW);
+                    intent.setDataAndType(fileUri, material.getMimeType());
+                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    try {
+                        startActivity(intent);
+                    } catch (Exception e) {
+                        Toast.makeText(this, "No se puede abrir el archivo", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(this, "El archivo ya no está disponible", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            binding.llMaterials.addView(itemView);
+        }
     }
 }

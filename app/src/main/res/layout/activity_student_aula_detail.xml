@@ -99,6 +99,116 @@
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
+                <!-- ===== BOTON CHAT ===== -->
+                <LinearLayout
+                    android:id="@+id/llChatButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/bg_input"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="16dp"
+                    android:backgroundTint="@color/white">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_chat"
+                        app:tint="@color/studentPrimary" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:layout_weight="1"
+                        android:text="Chat del Aula"
+                        android:textColor="@color/textDark"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <FrameLayout
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_marginEnd="8dp">
+
+                        <TextView
+                            android:id="@+id/badgeChatUnread"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_gravity="center"
+                            android:background="@drawable/bg_circle_orange"
+                            android:gravity="center"
+                            android:text="!"
+                            android:textColor="@color/white"
+                            android:textSize="8sp"
+                            android:textStyle="bold"
+                            android:visibility="gone" />
+                    </FrameLayout>
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:src="@drawable/ic_chevron_right_cyan" />
+                </LinearLayout>
+
+                <!-- ===== SECCION: MATERIAL DE APOYO ===== -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cardMaterials"
+                    style="@style/SectionCard"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp">
+
+                    <LinearLayout
+                        style="@style/SectionCardContent">
+
+                        <LinearLayout
+                            style="@style/SectionCardHeader">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_resource"
+                                app:tint="@color/studentPrimary" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_weight="1"
+                                android:text="Material de Apoyo"
+                                android:textColor="@color/textDark"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginVertical="12dp"
+                            android:background="#E5E7EB" />
+
+                        <LinearLayout
+                            android:id="@+id/llMaterials"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
+
+                        <TextView
+                            android:id="@+id/tvEmptyMaterials"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="No hay material de apoyo disponible"
+                            android:textColor="@color/textGray"
+                            android:textSize="14sp"
+                            android:visibility="gone" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
                 <!-- ===== SECCION: HORARIOS DEL AULA ===== -->
                 <androidx.cardview.widget.CardView
                     android:id="@+id/cardSchedule"
@@ -206,6 +316,85 @@
                             android:textColor="@color/textGray"
                             android:textSize="14sp"
                             android:visibility="gone" />
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- ===== SECCION: MI SOLICITUD PENDIENTE ===== -->
+                <androidx.cardview.widget.CardView
+                    android:id="@+id/cardMyPendingRequest"
+                    style="@style/SectionCard"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="@color/white"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="2dp">
+
+                    <LinearLayout
+                        style="@style/SectionCardContent">
+
+                        <LinearLayout
+                            style="@style/SectionCardHeader">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_clock"
+                                app:tint="@color/primaryOrange" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:layout_weight="1"
+                                android:text="Mi Solicitud Pendiente"
+                                android:textColor="@color/textDark"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvPendingBadge"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingHorizontal="10dp"
+                                android:paddingVertical="4dp"
+                                android:text="Pendiente"
+                                android:textColor="@color/white"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                android:background="@drawable/bg_rounded_orange" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginVertical="12dp"
+                            android:background="#E5E7EB" />
+
+                        <TextView
+                            android:id="@+id/tvMyRequestTopic"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Tema:"
+                            android:textColor="@color/textDark"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvMyRequestDate"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Fecha preferida:"
+                            android:textColor="@color/textGray"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvMyRequestTime"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Hora preferida:"
+                            android:textColor="@color/textGray"
+                            android:textSize="13sp" />
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 

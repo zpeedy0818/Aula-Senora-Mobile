@@ -2,11 +2,15 @@ package co.edu.aulasenora;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.OpenableColumns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -15,12 +19,17 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.Calendar;
 import java.util.List;
+import java.util.UUID;
 
 import co.edu.aulasenora.databinding.ActivityManageAulaBinding;
 import co.edu.aulasenora.db.DatabaseHelper;
@@ -28,6 +37,7 @@ import co.edu.aulasenora.models.AccessRequest;
 import co.edu.aulasenora.models.AdmittedStudent;
 import co.edu.aulasenora.models.Aula;
 import co.edu.aulasenora.models.ScheduleSlot;
+import co.edu.aulasenora.models.SupportMaterial;
 import co.edu.aulasenora.models.TutoringRequest;
 
 public class ManageAulaActivity extends AppCompatActivity {
@@ -44,6 +54,12 @@ public class ManageAulaActivity extends AppCompatActivity {
 
     private boolean showingAllSchedule = false;
     private boolean showingAllTutoring = false;
+
+    private static final int FILE_PICK_REQUEST_CODE = 1001;
+    private Uri pendingFileUri;
+    private String pendingFileName;
+    private String pendingMimeType;
+    private long pendingFileSize;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +104,106 @@ public class ManageAulaActivity extends AppCompatActivity {
             loadUpcomingTutoringSessions();
             binding.btnViewAllTutoring.setText(showingAllTutoring ? "Ver menos" : "Ver todos");
         });
+
+        binding.btnUploadMaterial.setOnClickListener(v -> pickFile());
+
+        binding.llChatButton.setOnClickListener(v -> {
+            Intent intent = new Intent(this, ChatDetailActivity.class);
+            intent.putExtra("aula_id", aulaId);
+            intent.putExtra("user_email", userEmail);
+            String aulaName = binding.includeHeader.tvTitle.getText().toString().replace("Gestionar: ", "");
+            intent.putExtra("aula_name", aulaName);
+            startActivity(intent);
+        });
+    }
+
+    private void pickFile() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        startActivityForResult(intent, FILE_PICK_REQUEST_CODE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == FILE_PICK_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
+            pendingFileUri = data.getData();
+            if (pendingFileUri != null) {
+                try (android.database.Cursor cursor = getContentResolver().query(pendingFileUri, null, null, null, null)) {
+                    if (cursor != null && cursor.moveToFirst()) {
+                        int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                        int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
+                        pendingFileName = nameIndex >= 0 ? cursor.getString(nameIndex) : "archivo";
+                        pendingFileSize = sizeIndex >= 0 ? cursor.getLong(sizeIndex) : 0;
+                    }
+                }
+                pendingMimeType = getContentResolver().getType(pendingFileUri);
+                if (pendingMimeType == null) pendingMimeType = "*/*";
+                showUploadNameDialog();
+            }
+        }
+    }
+
+    private void showUploadNameDialog() {
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_upload_material, null);
+
+        TextView tvFileName = dialogView.findViewById(R.id.tvSelectedFileName);
+        com.google.android.material.textfield.TextInputEditText etCustomName =
+                dialogView.findViewById(R.id.etCustomName);
+        Button btnSave = dialogView.findViewById(R.id.btnSaveUpload);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancelUpload);
+
+        tvFileName.setText("Archivo seleccionado: " + pendingFileName);
+        etCustomName.setText(pendingFileName);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        btnSave.setOnClickListener(v -> {
+            String customName = etCustomName.getText().toString().trim();
+            if (customName.isEmpty()) {
+                Toast.makeText(this, "El nombre es obligatorio", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            saveUploadedFile(customName);
+            dialog.dismiss();
+        });
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+    }
+
+    private void saveUploadedFile(String customName) {
+        try {
+            File dir = new File(getFilesDir(), "materials/aula_" + aulaId);
+            if (!dir.exists()) dir.mkdirs();
+
+            String uniqueName = UUID.randomUUID().toString() + "_" + pendingFileName;
+            File destFile = new File(dir, uniqueName);
+
+            try (InputStream in = getContentResolver().openInputStream(pendingFileUri);
+                 FileOutputStream out = new FileOutputStream(destFile)) {
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, bytesRead);
+                }
+            }
+
+            long result = dbHelper.createSupportMaterial(aulaId, userEmail, customName,
+                    pendingFileName, destFile.getAbsolutePath(), pendingMimeType, pendingFileSize);
+            if (result != -1) {
+                Toast.makeText(this, "Material subido", Toast.LENGTH_SHORT).show();
+                loadSupportMaterials();
+            } else {
+                Toast.makeText(this, "Error al guardar el material", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Error al subir el archivo", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
@@ -103,6 +219,8 @@ public class ManageAulaActivity extends AppCompatActivity {
         loadUpcomingTutoringSessions();
         loadTutoringRequests();
         loadAccessRequests();
+        loadSupportMaterials();
+        loadChatUnreadBadge();
     }
 
     // ===== ADMITTED STUDENTS =====
@@ -456,8 +574,24 @@ public class ManageAulaActivity extends AppCompatActivity {
 
             btnAccept.setOnClickListener(v -> {
                 dbHelper.updateTutoringRequestStatus(req.getId(), "approved");
+
+                String endTime = req.getPreferredEndTime();
+                if (endTime == null || endTime.isEmpty()) {
+                    String[] parts = req.getPreferredTime().split(":");
+                    int hour = Integer.parseInt(parts[0]);
+                    int minute = Integer.parseInt(parts[1]);
+                    hour = (hour + 1) % 24;
+                    endTime = String.format("%02d:%02d", hour, minute);
+                }
+
+                dbHelper.createScheduleSlot(aulaId, userEmail, req.getPreferredDate(),
+                        req.getPreferredTime(), endTime, "tutoring",
+                        req.getTopic(), req.getStudentEmail());
+
                 Toast.makeText(this, "Tutoría de " + req.getStudentName() + " aceptada", Toast.LENGTH_SHORT).show();
                 loadTutoringRequests();
+                loadScheduleSlots();
+                loadUpcomingTutoringSessions();
             });
 
             btnDeny.setOnClickListener(v -> {
@@ -508,6 +642,68 @@ public class ManageAulaActivity extends AppCompatActivity {
             });
 
             binding.llAccessRequests.addView(cardView);
+        }
+    }
+
+    // ===== CHAT UNREAD BADGE =====
+
+    private void loadChatUnreadBadge() {
+        int unread = dbHelper.getUnreadCount(aulaId, userEmail);
+        if (unread > 0) {
+            binding.badgeChatUnread.setVisibility(View.VISIBLE);
+        } else {
+            binding.badgeChatUnread.setVisibility(View.GONE);
+        }
+    }
+
+    // ===== SUPPORT MATERIALS =====
+
+    private void loadSupportMaterials() {
+        List<SupportMaterial> materials = dbHelper.getSupportMaterials(aulaId);
+        binding.llMaterials.removeAllViews();
+
+        if (materials.isEmpty()) {
+            binding.tvEmptyMaterials.setVisibility(View.VISIBLE);
+            return;
+        }
+        binding.tvEmptyMaterials.setVisibility(View.GONE);
+
+        LayoutInflater inflater = LayoutInflater.from(this);
+        for (SupportMaterial material : materials) {
+            View itemView = inflater.inflate(R.layout.item_support_material, binding.llMaterials, false);
+
+            TextView tvCustomName = itemView.findViewById(R.id.tvCustomName);
+            TextView tvUploadDate = itemView.findViewById(R.id.tvUploadDate);
+            TextView btnAction = itemView.findViewById(R.id.btnMaterialAction);
+            LinearLayout llViewCount = itemView.findViewById(R.id.llViewCount);
+            TextView tvViewCount = itemView.findViewById(R.id.tvViewCount);
+
+            tvCustomName.setText(material.getCustomName());
+
+            String rawDate = material.getCreatedAt();
+            if (rawDate != null && rawDate.length() >= 10) {
+                String datePart = rawDate.substring(0, 10);
+                String[] parts = datePart.split("-");
+                tvUploadDate.setText(parts[2] + "/" + parts[1] + "/" + parts[0]);
+            } else {
+                tvUploadDate.setText(rawDate);
+            }
+
+            int vc = material.getViewCount();
+            tvViewCount.setText(vc + " " + (vc == 1 ? "estudiante" : "estudiantes"));
+            llViewCount.setVisibility(View.VISIBLE);
+
+            btnAction.setText("Eliminar");
+            btnAction.setBackgroundColor(getColor(R.color.badgeRed));
+            btnAction.setOnClickListener(v -> {
+                File file = new File(material.getFilePath());
+                if (file.exists()) file.delete();
+                dbHelper.deleteSupportMaterial(material.getId());
+                Toast.makeText(this, "Material eliminado", Toast.LENGTH_SHORT).show();
+                loadSupportMaterials();
+            });
+
+            binding.llMaterials.addView(itemView);
         }
     }
 }
