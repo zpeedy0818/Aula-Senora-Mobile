@@ -147,6 +147,13 @@ public class VolunteerDashboardActivity extends AppCompatActivity {
         binding.navPerfil.setOnClickListener(v ->
             Toast.makeText(this, "Perfil (En construcción)", Toast.LENGTH_SHORT).show()
         );
+
+        binding.navChat.setOnClickListener(v -> {
+            Intent intent = new Intent(this, ChatListActivity.class);
+            intent.putExtra("user_email", userEmail);
+            intent.putExtra("is_volunteer", true);
+            startActivity(intent);
+        });
     }
 
     private void loadAccessRequests() {

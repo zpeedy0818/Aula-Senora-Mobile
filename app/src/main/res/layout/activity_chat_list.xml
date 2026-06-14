@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    style="@style/ActivityRoot">
+
+    <LinearLayout
+        style="@style/ActivityInner">
+
+        <include
+            android:id="@+id/includeHeader"
+            layout="@layout/include_header" />
+
+        <ScrollView
+            style="@style/ActivityScrollView">
+
+            <LinearLayout
+                android:id="@+id/llContainer"
+                style="@style/ActivityContainer">
+
+                <LinearLayout
+                    android:id="@+id/llChatAulas"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/tvEmptyChats"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="32dp"
+                    android:layout_gravity="center"
+                    android:text="No hay chats disponibles"
+                    android:textColor="@color/textGray"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

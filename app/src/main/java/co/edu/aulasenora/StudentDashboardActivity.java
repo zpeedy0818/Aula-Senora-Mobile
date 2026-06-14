@@ -75,6 +75,26 @@ public class StudentDashboardActivity extends AppCompatActivity {
         );
         
         setupSearch();
+
+        // Bottom navigation
+        binding.navInicio.setOnClickListener(v ->
+            Toast.makeText(this, "Ya estás en Inicio", Toast.LENGTH_SHORT).show()
+        );
+
+        binding.navHistorial.setOnClickListener(v ->
+            Toast.makeText(this, "Historial (En construcción)", Toast.LENGTH_SHORT).show()
+        );
+
+        binding.navChat.setOnClickListener(v -> {
+            Intent intent = new Intent(this, ChatListActivity.class);
+            intent.putExtra("user_email", userEmail);
+            intent.putExtra("is_volunteer", false);
+            startActivity(intent);
+        });
+
+        binding.navPerfil.setOnClickListener(v ->
+            Toast.makeText(this, "Perfil (En construcción)", Toast.LENGTH_SHORT).show()
+        );
     }
 
     private void setupSearch() {
