@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "673932314561",
+    "project_id": "aulasenora",
+    "storage_bucket": "aulasenora.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:673932314561:android:a63104052913b4cc741140",
+        "android_client_info": {
+          "package_name": "co.edu.aulasenora"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnGGVG7JdRib2DHjPqLBRoY8oWmBu3Uvw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
